@@ -32,7 +32,6 @@ def detUserName(first, last):
 		return userName
 def atribRegex(string):
 	''' Perform string replacement on Attribute values '''
-	#replaceSet = {"%firstName%": firstName, "%lastName%": lastName}
 	string = re.sub(r"%userName%", userName, string)
 	string = re.sub(r"%firstName%", args.firstName, string)
 	return re.sub(r"%lastName%", args.lastName, string)
@@ -102,7 +101,7 @@ def joinGroups(userCn, groups):
 		group = adgroup.ADGroup.from_dn(g)
 		group.add_members(user)
 def gen_password(length=8, charset="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"):
-    ''' Uses secrets library to generate random password '''
+	''' Uses secrets library to generate random password '''
 	return "".join([secrets.choice(charset) for _ in range(0, length)])
 def setTempPasswd(cn, passLength):
 	''' Changes user's password to randomly generated one, and then sets force_pwd_change '''
@@ -128,8 +127,6 @@ if __name__ == '__main__':
 if args.create:
 	userCn = args.firstName + ' ' + args.lastName
 	userName = detUserName(args.firstName, args.lastName)
-	#singleVarDict = createUserNameAtrib(args.firstName, args.lastName)
-	#userDef['singleVarAttrib'].update(userNameDict)
 	userDef = {}
 	try:
 		userDef.update(parseAttributes(readFile(args.attributeFile)))
