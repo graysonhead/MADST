@@ -121,7 +121,7 @@ if __name__ == '__main__':
 	parser.add_argument('-O', '--ou-distinguished-name', required=True, dest='ouDestinguishedName', help='Define the parent OU for user creation')
 	parser.add_argument('-A', '--attribute-file', required=True, dest='attributeFile', help='Text file containing LDAP attributes and values seperated by a space (one attribute per line)')
 	parser.add_argument('-s', '--naming-scheme', default='FirstL', dest='namingScheme', choices=['FirstL', 'FLast'], help='Pick the username naming scheme for the user. FLast = ghead, firstl = graysonh. Default is FirstL')
-	parser.add_argument('-y', dest='noPrompts', help='Supresses user confirmation prompts.', action='store_true')
+	parser.add_argument('-y', dest='noPrompts', help='Suppresses user confirmation prompts.', action='store_true')
 	parser.add_argument('-p', '--password-length', type=int, default=8, dest='passLength', help='Set the charachter length of the generated password')
 	args = parser.parse_args()
 if args.create:
