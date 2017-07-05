@@ -1,6 +1,5 @@
 ''' Importing Modules '''
 import sys
-import sys
 import argparse
 import csv
 import re
