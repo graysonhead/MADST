@@ -7,13 +7,8 @@ from win32 import *
 from pyad import *
 import secrets
 ''' pyinstaller has trouble finding these modules, so they have been manually specified '''
-from pyad import adbase
-from pyad import adcomputer
-from pyad import adcontainer
-from pyad import adsearch
-from pyad import adquery
-from pyad import addomain
-from pyad import pyad
+from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad
+
 ''' Function Junction '''
 def getOu(ou):
 	try:
@@ -28,6 +23,10 @@ def detUserName(first, last):
 			userName = first + last[0]
 		elif args.namingScheme == 'FLast':
 			userName = first[0] + last
+		elif args.namingScheme == 'First':
+			username = first
+		elif args.namingScheme == 'First.Last':
+			username = first + '.' + last
 		return userName
 def atribRegex(string):
 	''' Perform string replacement on Attribute values '''
@@ -119,7 +118,7 @@ if __name__ == '__main__':
 	parser.add_argument('-l', '--last-name', dest='lastName', required=True, help='Define last name for new user creation')
 	parser.add_argument('-O', '--ou-distinguished-name', required=True, dest='ouDestinguishedName', help='Define the parent OU for user creation')
 	parser.add_argument('-A', '--attribute-file', required=True, dest='attributeFile', help='Text file containing LDAP attributes and values seperated by a space (one attribute per line)')
-	parser.add_argument('-s', '--naming-scheme', default='FirstL', dest='namingScheme', choices=['FirstL', 'FLast'], help='Pick the username naming scheme for the user. FLast = ghead, firstl = graysonh. Default is FirstL')
+	parser.add_argument('-s', '--naming-scheme', default='FirstL', dest='namingScheme', choices=['FirstL', 'FLast', 'First', 'First.Last'], help='Pick the username naming scheme for the user. FLast = ghead, firstl = graysonh, First = Grayson, First.Last = Grayson.Head Default is FirstL')
 	parser.add_argument('-y', dest='noPrompts', help='Suppresses user confirmation prompts.', action='store_true')
 	parser.add_argument('-p', '--password-length', type=int, default=8, dest='passLength', help='Set the charachter length of the generated password')
 	args = parser.parse_args()
