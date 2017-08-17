@@ -24,9 +24,9 @@ def detUserName(first, last):
 		elif args.namingScheme == 'FLast':
 			userName = first[0] + last
 		elif args.namingScheme == 'First':
-			username = first
+			userName = first
 		elif args.namingScheme == 'First.Last':
-			username = first + '.' + last
+			userName = first + '.' + last
 		return userName
 def atribRegex(string):
 	''' Perform string replacement on Attribute values '''
