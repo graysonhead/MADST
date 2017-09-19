@@ -4,10 +4,10 @@ import argparse
 import csv
 import re
 from win32 import *
-from pyad import *
 import secrets
-''' pyinstaller has trouble finding these modules, so they have been manually specified '''
-from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad
+from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad, aduser, adgroup
+
+PROG_VERSION = '1.1.0'
 
 ''' Function Junction '''
 def getOu(ou):
@@ -98,7 +98,7 @@ def joinGroups(userCn, groups):
 	for g in groups:
 		group = adgroup.ADGroup.from_dn(g)
 		group.add_members(user)
-def gen_password(length=8, charset="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"):
+def gen_password(length=8, charset="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz23456789!@#$%^&*()"):
 	''' Uses secrets library to generate random password '''
 	return "".join([secrets.choice(charset) for _ in range(0, length)])
 def setTempPasswd(cn, passLength):
@@ -108,21 +108,30 @@ def setTempPasswd(cn, passLength):
 	user.set_password(passWord)
 	user.force_pwd_change_on_login()
 	return passWord
+	
 ''' Arguments '''
 if __name__ == '__main__':
 	''' This section handles commandline arguments '''
-	parser = argparse.ArgumentParser(description='Tool to add users to Active Directory')
+	parser = argparse.ArgumentParser(description='Tool to add users to Active Directory', prog='HSTAD')
+	parser.add_argument('-v', '--version', help='Displays version and exits', action='version', version= '%(prog)s {}'.format(PROG_VERSION))
 	parser.add_argument('-c', '--create', help='Mode: Creates a new user', action='store_true')
 	parser.add_argument('-r', '--reset-password', help='Mode: Resets a user\'s password', action='store_true')
-	parser.add_argument('-f', '--first-name', dest='firstName', required=True, help='Define first name for new user creation')
-	parser.add_argument('-l', '--last-name', dest='lastName', required=True, help='Define last name for new user creation')
-	parser.add_argument('-O', '--ou-distinguished-name', required=True, dest='ouDestinguishedName', help='Define the parent OU for user creation')
-	parser.add_argument('-A', '--attribute-file', required=True, dest='attributeFile', help='Text file containing LDAP attributes and values seperated by a space (one attribute per line)')
+	parser.add_argument('-f', '--first-name', dest='firstName',  help='Define first name for new user creation')
+	parser.add_argument('-l', '--last-name', dest='lastName',  help='Define last name for new user creation')
+	parser.add_argument('-O', '--ou-distinguished-name',  dest='ouDestinguishedName', help='Define the parent OU for user creation')
+	parser.add_argument('-A', '--attribute-file',  dest='attributeFile', help='Text file containing LDAP attributes and values seperated by a space (one attribute per line)')
 	parser.add_argument('-s', '--naming-scheme', default='FirstL', dest='namingScheme', choices=['FirstL', 'FLast', 'First', 'First.Last'], help='Pick the username naming scheme for the user. FLast = ghead, firstl = graysonh, First = Grayson, First.Last = Grayson.Head Default is FirstL')
 	parser.add_argument('-y', dest='noPrompts', help='Suppresses user confirmation prompts.', action='store_true')
 	parser.add_argument('-p', '--password-length', type=int, default=8, dest='passLength', help='Set the charachter length of the generated password')
 	args = parser.parse_args()
 if args.create:
+	try:
+		requiredArgs = [ args.firstName, args.lastName, args.ouDestinguishedName, args.attributeFile ]
+	except NameError:
+		print("==================================================\nERROR: \n CREATE mode requires the following arguments: --first-name, --last-name, --ou-distinguished-name, --attribute-file \n==================================================")
+		sys.exit(2)
+	else:
+		pass
 	userCn = args.firstName + ' ' + args.lastName
 	userName = detUserName(args.firstName, args.lastName)
 	userDef = {}
@@ -149,11 +158,21 @@ if args.create:
 	addAdUser(ou, userCn, userDef)
 	joinGroups(userCn, userDef['groups'])
 	userPasswd = setTempPasswd(userCn, args.passLength)
-	print(args.firstName + ' ' + args.lastName + '\'s password has been reset to: ' + userPasswd)
+	print(args.firstName + ' ' + args.lastName + '\'s password has been set to: ' + userPasswd)
 
 elif args.reset_password:
+	try:
+		requiredArgs = [ args.firstName, args.lastName ]
+	except NameError:
+		print("==================================================\nERROR: \n PASSWORD RESET mode requires the following arguments: --first-name, --last-name \n==================================================")
+		sys.exit(2)
+	else:
+		pass
 	userCn = args.firstName + ' ' + args.lastName
 	userPasswd = setTempPasswd(userCn, args.passLength)
 	print(args.firstName + ' ' + args.lastName + '\'s password has been reset to: ' + userPasswd)
-	
+
+else:
+	print("==================================================\nERROR: \n This program requires a mode switch to run \n==================================================")
+	parser.print_help()
 	
