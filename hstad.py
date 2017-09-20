@@ -7,7 +7,7 @@ from win32 import *
 import secrets
 from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad, aduser, adgroup
 
-PROG_VERSION = '1.1.0'
+PROG_VERSION = '1.2.0'
 
 ''' Function Junction '''
 def getOu(ou):
@@ -48,12 +48,22 @@ def readFile(filename):
 	return contents
 def parseAttributes(content):
 	''' Parses Attribute file into dict '''
+	''' Find and sort lines of interest '''
+	ouDistinguishedName = re.findall("ouDistinguishedName:.*", content)
 	singleVarAttributes = re.findall("single:.*", content)
 	multiVarAttributes = re.findall("multi:.*", content)
 	groupMembership = re.findall("group:.*", content)
 	singleVarAttribDict = {}
 	multiVarAttribDict = {}
 	groups = []
+	''' Split Lines into key and value, and remove identifier '''
+	if ouDistinguishedName:
+		ou = ouDistinguishedName[0].split(':',1)
+		ou = ou[1]
+		if ou.startswith('"') and ou.endswith('"'):
+			ou = ou[1:-1]
+		if ou.startswith('\'') and ou.endswith('\''):
+			ou = ou[1:-1]
 	for n in range(len(singleVarAttributes)):
 		singleVarAttributes[n] = singleVarAttributes[n].split(':', 1)[-1]
 		singleVarAttributes[n] = atribRegex(singleVarAttributes[n])
@@ -71,8 +81,12 @@ def parseAttributes(content):
 		else:
 			multiVarAttribDict[key] = [val]
 	singleVarAttribDict.update(createUserNameAtrib(args.firstName, args.lastName))
-	return {'singleVarAttrib': singleVarAttribDict, 'multiVarAttrib': multiVarAttribDict, 'groups': groups}
-	
+	try:
+		ou
+	except NameError:
+		return {'singleVarAttrib': singleVarAttribDict, 'multiVarAttrib': multiVarAttribDict, 'groups': groups}
+	else:
+		return {'singleVarAttrib': singleVarAttribDict, 'multiVarAttrib': multiVarAttribDict, 'groups': groups, 'ouDistinguishedName': ou}
 def checkUserExists(cn):
 	''' Exit on error if you are trying to create an existing CN '''
 	user = False
@@ -118,30 +132,42 @@ if __name__ == '__main__':
 	parser.add_argument('-r', '--reset-password', help='Mode: Resets a user\'s password', action='store_true')
 	parser.add_argument('-f', '--first-name', dest='firstName',  help='Define first name for new user creation')
 	parser.add_argument('-l', '--last-name', dest='lastName',  help='Define last name for new user creation')
-	parser.add_argument('-O', '--ou-distinguished-name',  dest='ouDestinguishedName', help='Define the parent OU for user creation')
+	parser.add_argument('-O', '--ou-distinguished-name',  dest='ouDistinguishedName', help='Define the parent OU for user creation')
 	parser.add_argument('-A', '--attribute-file',  dest='attributeFile', help='Text file containing LDAP attributes and values seperated by a space (one attribute per line)')
 	parser.add_argument('-s', '--naming-scheme', default='FirstL', dest='namingScheme', choices=['FirstL', 'FLast', 'First', 'First.Last'], help='Pick the username naming scheme for the user. FLast = ghead, firstl = graysonh, First = Grayson, First.Last = Grayson.Head Default is FirstL')
 	parser.add_argument('-y', dest='noPrompts', help='Suppresses user confirmation prompts.', action='store_true')
 	parser.add_argument('-p', '--password-length', type=int, default=8, dest='passLength', help='Set the charachter length of the generated password')
 	args = parser.parse_args()
 if args.create:
+	userDef = {}
 	try:
-		requiredArgs = [ args.firstName, args.lastName, args.ouDestinguishedName, args.attributeFile ]
+		requiredArgs = [ args.firstName, args.lastName, args.attributeFile ]
 	except NameError:
-		print("==================================================\nERROR: \n CREATE mode requires the following arguments: --first-name, --last-name, --ou-distinguished-name, --attribute-file \n==================================================")
+		print("==================================================\nERROR: \n CREATE mode requires the following arguments: --first-name, --last-name, --attribute-file \n==================================================")
 		sys.exit(2)
 	else:
 		pass
 	userCn = args.firstName + ' ' + args.lastName
 	userName = detUserName(args.firstName, args.lastName)
-	userDef = {}
 	try:
 		userDef.update(parseAttributes(readFile(args.attributeFile)))
 	except FileNotFoundError:
 		print("The attribute file you specified was not found, please check the file name and try again.")
 	else:
 		pass
-	ou = getOu(args.ouDestinguishedName)
+	try:
+		userDef['ouDistinguishedName']
+	except KeyError:
+		if args.ouDistinguishedName:
+			ou = args.ouDistinguishedName
+		else:
+			print("==================================================\nERROR: \n CREATE mode requires that you sepcify the OU for the new user. Please specify the OU either using the --ou-distinguished-name flag, or specify it in the attribute file. \n==================================================")
+			sys.exit(2)
+	else:
+		if args.ouDistinguishedName:
+			print("You specified an OU on both a command line option and in the template file, you only need to specify one. We will default to using the one in the attribute file.")
+		ou = userDef['ouDistinguishedName']
+	ou = getOu(ou)
 	checkUserExists(userCn)
 	if args.noPrompts:
 		pass
