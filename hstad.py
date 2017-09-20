@@ -122,6 +122,21 @@ def setTempPasswd(cn, passLength):
 	user.set_password(passWord)
 	user.force_pwd_change_on_login()
 	return passWord
+def disableUser(cn):
+	try:
+		user = aduser.ADUser.from_cn(cn)
+	except:
+		print("Error: Failed to retrive user object.")
+		sys.exit(1)
+	else:
+		pass
+	try:
+		user.disable()
+	except:
+		print("Error: Failed to disable user")
+		sys.exit(1)
+	else:
+		pass
 	
 ''' Arguments '''
 if __name__ == '__main__':
@@ -130,6 +145,7 @@ if __name__ == '__main__':
 	parser.add_argument('-v', '--version', help='Displays version and exits', action='version', version= '%(prog)s {}'.format(PROG_VERSION))
 	parser.add_argument('-c', '--create', help='Mode: Creates a new user', action='store_true')
 	parser.add_argument('-r', '--reset-password', help='Mode: Resets a user\'s password', action='store_true')
+	parser.add_argument('-d', '--disable-user', help='Mode: Disables a user\'s account without deleting', action='store_true')
 	parser.add_argument('-f', '--first-name', dest='firstName',  help='Define first name for new user creation')
 	parser.add_argument('-l', '--last-name', dest='lastName',  help='Define last name for new user creation')
 	parser.add_argument('-O', '--ou-distinguished-name',  dest='ouDistinguishedName', help='Define the parent OU for user creation')
@@ -197,7 +213,19 @@ elif args.reset_password:
 	userCn = args.firstName + ' ' + args.lastName
 	userPasswd = setTempPasswd(userCn, args.passLength)
 	print(args.firstName + ' ' + args.lastName + '\'s password has been reset to: ' + userPasswd)
-
+elif args.disable_user:
+	try:
+		requiredArgs = [ args.firstName, args.lastName ]
+	except NameError:
+		print("==================================================\nERROR: \n DISABLE USER mode requires the following arguments: --first-name, --last-name \n==================================================")
+		sys.exit(2)
+	else:
+		pass
+	userCn = args.firstName + ' ' + args.lastName
+	disableUser(userCn)
+	print('User has been Disabled')
+	sys.exit(0)
+	
 else:
 	print("==================================================\nERROR: \n This program requires a mode switch to run \n==================================================")
 	parser.print_help()
