@@ -111,7 +111,12 @@ def joinGroups(userCn, groups):
 	user = aduser.ADUser.from_cn(userCn)
 	for g in groups:
 		group = adgroup.ADGroup.from_dn(g)
-		group.add_members(user)
+		try:
+			group.add_members(user)
+		except pwintypes.com_error:
+			print("Error: The program was unable to add the user to one of the groups specified. This is usually because the user is already a member of the group in question, or the group does not exist.")
+		else:
+			pass
 def gen_password(length=8, charset="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz23456789!@#$%^&*()"):
 	''' Uses secrets library to generate random password '''
 	return "".join([secrets.choice(charset) for _ in range(0, length)])
