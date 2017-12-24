@@ -1,7 +1,66 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify
-from app import app
+from flask import render_template, flash, redirect, url_for, request, jsonify, current_app
+from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, rbac
+from .forms import LoginForm
 
-@app.route('/home', methods=['GET'])
-def home():
-	app.logger.info("Someone viewed %s" % request.path)
+def log_pageview(request):
+	app.logger.info("Someone viewed %s" % request)
+
+
+@login_manager.user_loader
+def load_user(username):
+	return db.session.query(models.User).filter_by(username=username).first()
+
+
+@app.before_request
+def before_request():
+	g.user = current_user
+	rbac.set_user_loader(g.user)
+
+
+@app.route('/index', methods=['GET'])
+@rbac.allow(['anonymous'], methods=['GET'])
+def index():
+	log_pageview(request.path)
 	return "Hello World!"
+
+@app.route('/sec1', methods=['GET'])
+def sec1():
+	log_pageview(request.path)
+	return "Secure page 1"
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+	form = LoginForm()
+	if g.user is not None and g.user.is_authenticated:
+		return redirect(url_for('index'))
+	if form:
+		username = form.username.data
+		password = form.password.data
+		remember_me = form.remember_me.data
+		userObj = db.session.query(models.User).filter_by(username=username).first()
+		if userObj:
+			passval = userObj.check_password(password)
+			if passval:
+				app.logger.info("User %s logged in" % userObj.username)
+				login_user(userObj, remember=remember_me)
+				flash('You have logged in successfully')
+				return redirect(url_for('index'))
+			else:
+				app.logger.info('User {0} attempted to login with incorrect password'.format(form.username.data))
+				flash("Incorrect password")
+		else:
+			app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
+			flash("Incorrect username")
+	return render_template('login.html',
+						   title='Sign In',
+						   form=form)
+
+@app.route("/logout")
+@login_required
+@rbac.allow(['User'], methods=['GET'])
+def logout():
+	logout_user()
+	return redirect(url_for('index'))
+

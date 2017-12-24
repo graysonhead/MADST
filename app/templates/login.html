@@ -1,0 +1,12 @@
+<!-- Extends base layout -->
+{%extends "base.html" %}
+
+{% block content %}
+
+{{ form.hidden_tag() }}
+<form action="" method="post" name="login">
+    {{ form.username.label }} {{ form.username }}
+    {{ form.password.label }} {{ form.password }}
+    <p>{{ form.remember_me }} Remember Me</p>
+    <p><input type="submit" value="Sign In"></p>
+    {% endblock %}
