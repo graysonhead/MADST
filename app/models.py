@@ -1,6 +1,6 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_rbac import RoleMixin, UserMixin
+from flask.ext.permissions.models import UserMixin, Role, Ability
 import datetime
 from hashlib import md5
 
@@ -27,12 +27,20 @@ from hashlib import md5
 #     def get_by_name(name):
 #         return Role.query.filter_by(name=name).first()
 #
+class BRole(Role):
+	def __init__(self, name):
+		Role.__init__(self, name)
 
 
-class User(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	username = db.Column(db.String(120), index=True, unique=True)
+class User(UserMixin):
+	username = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
+
+	def __init__(self, username, password, roles=None):
+		self.username = username.lower()
+		self.set_password(password)
+		# Be sure to call the UserMixin's constructor in your class constructor
+		UserMixin.__init__(self, roles)
 
 	#Needed flask properties
 	@property
