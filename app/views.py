@@ -1,7 +1,9 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, current_app
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
+from .decorators import required
 from .forms import LoginForm
-from flask.ext.permissions.decorators import user_is, user_has
+
+# from flask.ext.permissions.decorators import user_is, user_has
 
 
 def log_pageview(request):
@@ -24,7 +26,8 @@ def index():
 	return "Hello World!"
 
 @app.route('/sec1', methods=['GET'])
-@user_is('admin')
+# @user_is('admin')
+@required('admin2')
 @login_required
 def sec1():
 	log_pageview(request.path)

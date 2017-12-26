@@ -4,7 +4,7 @@ import config
 from logging.handlers import RotatingFileHandler
 from flask import Flask, g
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from flask.ext.permissions.core import Permissions
+# from flask.ext.permissions.core import Permissions
 
 
 # Main flask app
@@ -24,7 +24,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Permissions
-perms = Permissions(app, db, current_user)
+# perms = Permissions(app, db, current_user)
 
 # Logging
 handler = RotatingFileHandler(config.logfile, maxBytes=10000, backupCount=1)
