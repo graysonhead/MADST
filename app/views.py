@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, current_app
-from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, rbac
+from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .forms import LoginForm
 
 
@@ -18,13 +18,12 @@ def before_request():
 
 
 @app.route('/index', methods=['GET'])
-@rbac.allow(['User'], methods=['GET'])
 def index():
 	log_pageview(request.path)
 	return "Hello World!"
 
 @app.route('/sec1', methods=['GET'])
-@rbac.allow(['User'], methods=['GET'])
+@login_required
 def sec1():
 	log_pageview(request.path)
 	return "Secure page 1"
@@ -32,7 +31,6 @@ def sec1():
 
 
 @app.route('/login', methods=['GET', 'POST'])
-@rbac.allow(['anonmous'], methods=['GET', 'POST'])
 def login():
 	form = LoginForm()
 	if g.user is not None and g.user.is_authenticated:
@@ -60,14 +58,9 @@ def login():
 						   title='Sign In',
 						   form=form)
 
-def get_current_user():
-	return g.current_user
-
-rbac.set_user_loader(get_current_user)
 
 @app.route("/logout")
 @login_required
-@rbac.allow(['User'], methods=['GET'])
 def logout():
 	logout_user()
 	return redirect(url_for('index'))
