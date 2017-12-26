@@ -2,9 +2,9 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, c
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, rbac
 from .forms import LoginForm
 
+
 def log_pageview(request):
 	app.logger.info("Someone viewed %s" % request)
-
 
 @login_manager.user_loader
 def load_user(username):
@@ -14,16 +14,17 @@ def load_user(username):
 @app.before_request
 def before_request():
 	g.user = current_user
-	rbac.set_user_loader(g.user)
+
 
 
 @app.route('/index', methods=['GET'])
-@rbac.allow(['anonymous'], methods=['GET'])
+@rbac.allow(['User'], methods=['GET'])
 def index():
 	log_pageview(request.path)
 	return "Hello World!"
 
 @app.route('/sec1', methods=['GET'])
+@rbac.allow(['User'], methods=['GET'])
 def sec1():
 	log_pageview(request.path)
 	return "Secure page 1"
@@ -31,6 +32,7 @@ def sec1():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@rbac.allow(['anonmous'], methods=['GET', 'POST'])
 def login():
 	form = LoginForm()
 	if g.user is not None and g.user.is_authenticated:
@@ -45,6 +47,7 @@ def login():
 			if passval:
 				app.logger.info("User %s logged in" % userObj.username)
 				login_user(userObj, remember=remember_me)
+				g.current_user = userObj
 				flash('You have logged in successfully')
 				return redirect(url_for('index'))
 			else:
@@ -56,6 +59,11 @@ def login():
 	return render_template('login.html',
 						   title='Sign In',
 						   form=form)
+
+def get_current_user():
+	return g.current_user
+
+rbac.set_user_loader(get_current_user)
 
 @app.route("/logout")
 @login_required
