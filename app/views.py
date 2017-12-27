@@ -26,8 +26,7 @@ def index():
 	return "Hello World!"
 
 @app.route('/sec1', methods=['GET'])
-# @user_is('admin')
-@required('admin2')
+@required('admin')
 @login_required
 def sec1():
 	log_pageview(request.path)

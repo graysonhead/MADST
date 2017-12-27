@@ -1,8 +1,19 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import relationship
 import datetime
 from hashlib import md5
+
+# task_table = db.Table('task_table',
+# 					  db.Column(
+# 						  'organization_id', db.Integer, db.ForeignKey('organization.id')
+# 					  ),
+# 					  db.Column(
+# 						  'task_id', db.Integer, db.ForeignKey('task.id')
+# 					  )
+# 					  )
+
 
 role_table = db.Table('user_role',
 					  db.Column(
@@ -12,6 +23,35 @@ role_table = db.Table('user_role',
 						  'role_id', db.Integer, db.ForeignKey('role.id')
 					  )
 					  )
+
+class Task(db.Model):
+	__tablename__ = 'task'
+	id = db.Column(db.Integer, primary_key=True)
+	is_complete = db.Column(db.Integer)
+	is_sent = db.Column(db.Integer)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
+
+	def __repr__(self):
+		return '<Task ID {}>'.format(self.id)
+
+class Organization(db.Model):
+	__tablename__ = 'organization'
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(120), unique=True)
+	tasks = relationship("Task")
+
+
+	def __init__(self, name):
+		self.name = name.lower()
+
+	def __repr__(self):
+		return '<Organization {}>'.format(self.name)
+
+	def __str__(self):
+		return self.name
+
+
 
 class Role(db.Model):
 	__tablename__ = 'role'
