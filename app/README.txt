@@ -8,3 +8,4 @@ flask-permissions
 flask-sqlalchemy
 flask-WTF
 Werkzeug
+sqlalchemy-migrate

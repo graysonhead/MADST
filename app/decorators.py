@@ -16,7 +16,7 @@ def required(role):
 		def inner(*args, **kwargs):
 			from .models import Role
 			current_user = import_user()
-			if role in current_user.roles:
+			if current_user.check_role(role):
 				return func(*args, **kwargs)
 			raise Forbidden("Your roles do not grant you access to this page")
 		return inner

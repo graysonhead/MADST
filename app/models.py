@@ -24,32 +24,7 @@ role_table = db.Table('user_role',
 					  )
 					  )
 
-class Task(db.Model):
-	__tablename__ = 'task'
-	id = db.Column(db.Integer, primary_key=True)
-	is_complete = db.Column(db.Integer)
-	is_sent = db.Column(db.Integer)
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
 
-	def __repr__(self):
-		return '<Task ID {}>'.format(self.id)
-
-class Organization(db.Model):
-	__tablename__ = 'organization'
-	id = db.Column(db.Integer, primary_key=True)
-	name = db.Column(db.String(120), unique=True)
-	tasks = relationship("Task")
-
-
-	def __init__(self, name):
-		self.name = name.lower()
-
-	def __repr__(self):
-		return '<Organization {}>'.format(self.name)
-
-	def __str__(self):
-		return self.name
 
 
 
@@ -57,6 +32,11 @@ class Role(db.Model):
 	__tablename__ = 'role'
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120), unique=True)
+	users = relationship(
+		"User",
+		secondary=role_table,
+		back_populates="roles"
+	)
 
 	def __init__(self, name):
 		self.name = name.lower()
@@ -73,12 +53,12 @@ class User(db.Model):
 	username = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
 	__tablename__ = 'user'
-	_roles = db.relationship(
-		'Role', secondary=role_table, backref='users'
+	roles = relationship(
+		"Role",
+		secondary=role_table,
+		back_populates="users"
 	)
 	type = db.Column(db.String(50))
-
-	roles = association_proxy('_roles', 'name')
 
 	def __init__(self, username, password, roles=None):
 		self.username = username.lower()
@@ -107,9 +87,18 @@ class User(db.Model):
 	def get_id(self):
 		return self.username
 
+	def add_roles(self, *roles):
+		self.roles.extend([role for role in roles if role not in self.roles])
+
 	def check_role(self, role):
+		if type(role) is str:
+			rolelist = []
+			for r in self.roles:
+				rolelist.append(r.name)
+			if role in rolelist:
+				return True
 		if role in self.roles:
-			return 'Truth'
+			return True
 
 	def __repr__(self):
 		return '<User %r>' % self.username
@@ -117,3 +106,29 @@ class User(db.Model):
 
 
 
+class Task(db.Model):
+	__tablename__ = 'task'
+	id = db.Column(db.Integer, primary_key=True)
+	is_complete = db.Column(db.Integer)
+	is_sent = db.Column(db.Integer)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
+
+	def __repr__(self):
+		return '<Task ID {}>'.format(self.id)
+
+class Organization(db.Model):
+	__tablename__ = 'organization'
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(120))
+	tasks = relationship("Task")
+
+
+	def __init__(self, name):
+		self.name = name.lower()
+
+	def __repr__(self):
+		return '<Organization {}>'.format(self.name)
+
+	def __str__(self):
+		return self.name
