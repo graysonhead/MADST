@@ -21,3 +21,16 @@ def required(role):
 			raise Forbidden("Your roles do not grant you access to this page")
 		return inner
 	return wrapper
+
+# def dbcontext(func):
+# 	def inner(*args, **kwargs):
+# 		session = db.Session()
+# 		try:
+# 			func(*args, session=session, **kwargs)
+# 			session.commit()
+# 		except:
+# 			session.rollback()
+# 			raise
+# 		finally:
+# 			session.close()
+# 	return inner

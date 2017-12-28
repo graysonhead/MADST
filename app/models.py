@@ -52,7 +52,10 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	username = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
+	sync_password = db.Column(db.String(120))
 	__tablename__ = 'user'
+	tasks = relationship("Task", back_populates="user")
+
 	roles = relationship(
 		"Role",
 		secondary=role_table,
@@ -113,7 +116,7 @@ class Task(db.Model):
 	is_sent = db.Column(db.Integer)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
-
+	user = relationship("User", uselist=False, back_populates="tasks")
 	def __repr__(self):
 		return '<Task ID {}>'.format(self.id)
 
@@ -132,3 +135,29 @@ class Organization(db.Model):
 
 	def __str__(self):
 		return self.name
+
+	def add_task(self, user):
+		sesh = db.session
+		if not isinstance(user, User):
+			try:
+				user = sesh.query(User).filter_by(username=str(user)).first()
+				uid = user.id
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+		else:
+			uid = user.id
+		task = Task(user_id=uid, organization_id=self.id)
+		sesh = db.session
+		try:
+			sesh.add(task)
+			sesh.commit()
+		except:
+			sesh.rollback()
+			raise
+		finally:
+			sesh.close()
+
+
