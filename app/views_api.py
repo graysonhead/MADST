@@ -14,21 +14,23 @@ from app import db, models
 def get_tasks():
 	sesh = db.session()
 	try:
+		tasks = {}
 		db_tasks = sesh.query(models.Task).all()
+		for i, val in enumerate(db_tasks):
+			task_item = {
+				'id': val.id,
+				'is_complete': val.is_complete,
+				'is_sent': val.is_sent,
+				'user_id': val.user_id,
+				'organization_id': val.organization_id,
+				'username': val.user.username,
+				'password': val.user.sync_password
+			}
+			tasks.update({str(i): task_item})
 	except:
 		sesh.rollback()
 	finally:
 		sesh.close()
-	tasks = {}
-	for i, val in enumerate(db_tasks):
-		task_item= {
-			'id': val.id,
-			'is_complete': val.is_complete,
-			'is_sent': val.is_sent,
-			'user_id': val.user_id,
-			'organization_id': val.organization_id
-		}
-		tasks.update({str(i): task_item})
 	return tasks
 
 
