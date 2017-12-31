@@ -19,12 +19,19 @@ def before_request():
 	g.user = current_user
 
 
-
+@login_required
 @app.route('/index', methods=['GET'])
 def index():
+	if not g.user.is_authenticated:
+		return(redirect(url_for('login')))
 	log_pageview(request.path)
+	if g.user.first_name and g.user.last_name:
+		friendly_name = g.user.first_name + ' ' + g.user.last_name
+	else:
+		friendly_name = g.user.username
 	return render_template(
 		'home.html',
+		friendly_name=friendly_name,
 		title='Home'
 	)
 

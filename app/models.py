@@ -50,6 +50,8 @@ class Role(db.Model):
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
+	first_name = db.Column(db.String(120))
+	last_name = db.Column(db.String(120))
 	username = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
 	sync_password = db.Column(db.String(120))
