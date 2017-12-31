@@ -23,7 +23,10 @@ def before_request():
 @app.route('/index', methods=['GET'])
 def index():
 	log_pageview(request.path)
-	return "Hello World!"
+	return render_template(
+		'home.html',
+		title='Home'
+	)
 
 @app.route('/sec1', methods=['GET'])
 @required('admin')
