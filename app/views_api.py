@@ -24,7 +24,8 @@ def get_tasks():
 				'user_id': val.user_id,
 				'organization_id': val.organization_id,
 				'username': val.user.username,
-				'password': val.user.sync_password
+				'sync_username': val.user.sync_username,
+				'sync_password': val.user.sync_password
 			}
 			tasks.update({str(i): task_item})
 	except:

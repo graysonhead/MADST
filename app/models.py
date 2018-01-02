@@ -1,4 +1,4 @@
-from app import db
+from app import db, config
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -55,6 +55,7 @@ class User(db.Model):
 	username = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
 	sync_password = db.Column(db.String(120))
+	sync_username = db.Column(db.String(120))
 	__tablename__ = 'user'
 	tasks = relationship("Task", back_populates="user")
 
@@ -104,6 +105,8 @@ class User(db.Model):
 				return True
 		if role in self.roles:
 			return True
+	def gen_sync_username(self):
+		self.sync_username = config.syncloginprefix + '-' + self.first_name + '.' + self.last_name
 
 	def __repr__(self):
 		return '<User %r>' % self.username

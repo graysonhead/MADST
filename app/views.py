@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm
+from .forms import LoginForm, PasswordChange
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -20,8 +20,35 @@ def before_request():
 
 
 @login_required
-@app.route('/index', methods=['GET'])
+@app.route('/index', methods=['GET', 'POST'])
 def index():
+	form = PasswordChange()
+	if form.password.data:
+		password = form.password.data
+		try:
+			sesh = db.session()
+			try:
+				user = sesh.query(models.User).filter_by(username=g.user.username).first()
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+			user.sync_password = password
+			sesh = db.session()
+			try:
+				sesh.add(user)
+				sesh.commit()
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+			flash("Sync password changed.")
+			return redirect(url_for('index'))
+		except:
+			flash("Sync Password change failed.")
+			return redirect(url_for('index'))
 	if not g.user.is_authenticated:
 		return(redirect(url_for('login')))
 	log_pageview(request.path)
@@ -31,7 +58,9 @@ def index():
 		friendly_name = g.user.username
 	return render_template(
 		'home.html',
-		friendly_name=friendly_name,
+		friendly_name=friendly_name.title(),
+		user=g.user,
+		form=form,
 		title='Home'
 	)
 
