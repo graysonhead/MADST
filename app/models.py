@@ -60,6 +60,7 @@ class User(db.Model):
 	first_name = db.Column(db.String(120))
 	last_name = db.Column(db.String(120))
 	username = db.Column(db.String(120), unique=True)
+	email = db.Column(db.String(120), unique=True)
 	password = db.Column(db.String(120))
 	sync_password = db.Column(db.String(120))
 	sync_username = db.Column(db.String(120))
@@ -79,7 +80,7 @@ class User(db.Model):
 	)
 	type = db.Column(db.String(50))
 
-	def __init__(self, username, password, roles=None):
+	def __init__(self, email, password, roles=None):
 		self.username = username.lower()
 		self.set_password(password)
 
@@ -139,6 +140,7 @@ class Task(db.Model):
 	is_sent = db.Column(db.Integer)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
+	organization = relationship("Organization", uselist=False)
 	user = relationship("User", uselist=False, back_populates="tasks")
 	def __repr__(self):
 		return '<Task ID {}>'.format(self.id)
@@ -147,6 +149,7 @@ class Organization(db.Model):
 	__tablename__ = 'organization'
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120))
+	admin_ou = db.Column(db.String(120))
 	tasks = relationship("Task")
 	admin_users = relationship(
 		"User",

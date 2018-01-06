@@ -11,7 +11,7 @@ from app import db, models
 # 		}
 # }
 
-def get_tasks():
+def get_tasks():	
 	sesh = db.session()
 	try:
 		tasks = {}
@@ -27,7 +27,8 @@ def get_tasks():
 				'first_name': val.user.first_name.title(),
 				'last_name': val.user.last_name.title(),
 				'sync_username': val.user.sync_username,
-				'sync_password': val.user.sync_password
+				'sync_password': val.user.sync_password,
+				'create_in': val.organization.admin_ou
 			}
 			tasks.update({str(i): task_item})
 	except:
