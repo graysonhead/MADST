@@ -24,6 +24,8 @@ def get_tasks():
 				'user_id': val.user_id,
 				'organization_id': val.organization_id,
 				'username': val.user.username,
+				'first_name': val.user.first_name.title(),
+				'last_name': val.user.last_name.title(),
 				'sync_username': val.user.sync_username,
 				'sync_password': val.user.sync_password
 			}

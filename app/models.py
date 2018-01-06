@@ -22,9 +22,16 @@ role_table = db.Table('user_role',
 					  db.Column(
 						  'role_id', db.Integer, db.ForeignKey('role.id')
 					  )
-					  )
+)
 
-
+admin_user_table = db.Table('admin_user_table',
+							db.Column(
+								'user_id', db.Integer, db.ForeignKey('user.id')
+							),
+							db.Column(
+								'organization_id', db.Integer, db.ForeignKey('organization.id')
+							)
+)
 
 
 
@@ -64,6 +71,12 @@ class User(db.Model):
 		secondary=role_table,
 		back_populates="users"
 	)
+
+	admin_orgs = relationship(
+		"Organization",
+		secondary=admin_user_table,
+		back_populates="admin_users"
+	)
 	type = db.Column(db.String(50))
 
 	def __init__(self, username, password, roles=None):
@@ -86,6 +99,11 @@ class User(db.Model):
 	#password functions
 	def set_password(self, password):
 		self.password = generate_password_hash(password)
+
+	def set_sync_password(self, password):
+		self.sync_password = password
+		for o in self.admin_orgs:
+			o.add_task(self)
 
 	def check_password(self, password):
 		return check_password_hash(self.password, password)
@@ -130,7 +148,11 @@ class Organization(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120))
 	tasks = relationship("Task")
-
+	admin_users = relationship(
+		"User",
+		secondary=admin_user_table,
+		back_populates="admin_orgs"
+	)
 
 	def __init__(self, name):
 		self.name = name.lower()
