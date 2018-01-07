@@ -25,21 +25,20 @@ def index():
 	form = PasswordChange()
 	if form.password.data:
 		password = form.password.data
+		sesh = db.session()
 		try:
-			sesh = db.session()
-			try:
-				user = sesh.query(models.User).filter_by(id=g.user.id).first()
-				user.set_sync_password(password)
-				sesh.add(user)
-				flash("Sync password changed.")
-			except:
-				sesh.rollback()
-				raise
-			finally:
-				sesh.close()
-				return redirect(url_for('index'))
+			user = sesh.query(models.User).filter_by(id=g.user.id).first()
+			user.set_sync_password(password)
+			sesh.add(user)
+			app.logger.info("{} changed their sync password".format(g.user.username))
+			flash("Sync password changed.")
 		except:
 			flash("Sync Password change failed.")
+			sesh.rollback()
+			raise
+		finally:
+			sesh.commit()
+			sesh.close()
 			return redirect(url_for('index'))
 	if not g.user.is_authenticated:
 		return(redirect(url_for('login')))

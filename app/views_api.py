@@ -10,6 +10,34 @@ from app import db, models
 # 		'password': 'lmfao'
 # 		}
 # }
+def get_task(id):
+	sesh = db.session
+	try:
+		val = sesh.query(models.Task).filter_by(id=id).first()
+		task_item = {
+			'id': val.id,
+			'status': {
+				'id': val.status.id,
+				'name': val.status.name
+			},
+			'organization': {
+				'id': val.organization_id,
+				'name': val.organization.name,
+				'admin_ou': val.organization.admin_ou
+			},
+			'user': {
+				'first_name': val.user.first_name.title(),
+				'last_name': val.user.last_name.title(),
+				'sync_username': val.user.sync_username,
+				'sync_password': val.user.sync_password
+			}
+
+		}
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+	return task_item
 
 def get_tasks(org_id=False):
 	sesh = db.session()
@@ -58,9 +86,11 @@ parser.add_argument('task')
 
 class Task(Resource):
 	def get(self, task_id):
-		tasks = get_tasks()
-		abort_no_task(task_id)
-		return tasks[task_id]
+		task = get_task(task_id)
+		return task
+
+	# def put(self, task_id):
+	# 	args = parser.parse_args()
 
 
 class Tasks(Resource):

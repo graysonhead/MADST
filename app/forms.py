@@ -9,4 +9,4 @@ class LoginForm(Form):
 	remember_me = BooleanField('remember_me', default=False)
 
 class PasswordChange(Form):
-	password = StringField('Password', validators=[DataRequired()])
+	password = PasswordField('Password', validators=[DataRequired()])
