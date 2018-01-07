@@ -127,6 +127,9 @@ class User(db.Model):
 	def gen_sync_username(self):
 		self.sync_username = config.syncloginprefix + '-' + self.first_name + '.' + self.last_name
 
+	def add_task(self, org):
+		self.tasks.append(Task(org, self))
+
 	def __repr__(self):
 		return '<User %r>' % self.username
 
@@ -142,6 +145,11 @@ class Task(db.Model):
 	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
 	organization = relationship("Organization", uselist=False)
 	user = relationship("User", uselist=False, back_populates="tasks")
+
+	def __init__(self, org, user):
+		self.organization = org
+		self.user = user
+
 	def __repr__(self):
 		return '<Task ID {}>'.format(self.id)
 
@@ -167,27 +175,6 @@ class Organization(db.Model):
 		return self.name
 
 	def add_task(self, user):
-		sesh = db.session
-		if not isinstance(user, User):
-			try:
-				user = sesh.query(User).filter_by(username=str(user)).first()
-				uid = user.id
-			except:
-				sesh.rollback()
-				raise
-			finally:
-				sesh.close()
-		else:
-			uid = user.id
-		task = Task(user_id=uid, organization_id=self.id)
-		sesh = db.session
-		try:
-			sesh.add(task)
-			sesh.commit()
-		except:
-			sesh.rollback()
-			raise
-		finally:
-			sesh.close()
+		self.tasks.append(Task(self, user))
 
 

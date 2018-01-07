@@ -33,9 +33,10 @@ def get_tasks():
 			tasks.update({str(i): task_item})
 	except:
 		sesh.rollback()
+		raise
 	finally:
 		sesh.close()
-	return tasks
+		return tasks
 
 
 def abort_no_task(task_id):
