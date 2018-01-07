@@ -19,16 +19,23 @@ def get_tasks():
 		for i, val in enumerate(db_tasks):
 			task_item = {
 				'id': val.id,
-				'is_complete': val.is_complete,
-				'is_sent': val.is_sent,
-				'user_id': val.user_id,
-				'organization_id': val.organization_id,
-				'username': val.user.username,
-				'first_name': val.user.first_name.title(),
-				'last_name': val.user.last_name.title(),
-				'sync_username': val.user.sync_username,
-				'sync_password': val.user.sync_password,
-				'create_in': val.organization.admin_ou
+				'status': {
+					'id': val.status.id,
+					'name': val.status.name
+				},
+				'organization': {
+					'id': val.organization_id,
+					'name': val.organization.name,
+					'admin_ou': val.organization.admin_ou
+				},
+				'user': {
+					'first_name': val.user.first_name.title(),
+					'last_name': val.user.last_name.title(),
+					'sync_username': val.user.sync_username,
+					'sync_password': val.user.sync_password
+				}
+
+
 			}
 			tasks.update({str(i): task_item})
 	except:

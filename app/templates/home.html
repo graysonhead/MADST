@@ -22,8 +22,11 @@
             </form>
           </div>
           <div class="col-lg-4">
-            <h2>Heading</h2>
-            <p></p>
+            <h2>Tasks</h2>
+              {% for i in g.user.tasks %}
+              Task id: {{ i.id }}
+              <p>Directory: {{ i.organization.name.title() }}<br>Status: {{ i.status.name.title() }}</p>
+              {% endfor %}
           </div>
         </div>
 

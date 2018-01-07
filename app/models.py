@@ -33,6 +33,15 @@ admin_user_table = db.Table('admin_user_table',
 							)
 )
 
+status_map = db.Table('status_map',
+					  db.Column(
+						  'status_id', db.Integer, db.ForeignKey('status.id')
+					  ),
+					  db.Column(
+						  'task_id', db.Integer, db.ForeignKey('task.id')
+					  )
+)
+
 
 
 class Role(db.Model):
@@ -139,16 +148,21 @@ class User(db.Model):
 class Task(db.Model):
 	__tablename__ = 'task'
 	id = db.Column(db.Integer, primary_key=True)
-	is_complete = db.Column(db.Integer)
-	is_sent = db.Column(db.Integer)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
 	organization = relationship("Organization", uselist=False)
 	user = relationship("User", uselist=False, back_populates="tasks")
+	status = relationship(
+		"Status",
+		secondary=status_map,
+		uselist=False,
+		back_populates="tasks"
+	)
 
 	def __init__(self, org, user):
 		self.organization = org
 		self.user = user
+		self.status = db.session.query(Status).filter_by(name='new').first()
 
 	def __repr__(self):
 		return '<Task ID {}>'.format(self.id)
@@ -178,3 +192,21 @@ class Organization(db.Model):
 		self.tasks.append(Task(self, user))
 
 
+class Status(db.Model):
+	__tablename__="status"
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(120), unique=True)
+	tasks = relationship(
+		"Task",
+		secondary=status_map,
+		back_populates="status"
+	)
+
+	def __init__(self, name):
+		self.name = name
+
+	def __repr__(self):
+		return '<Status: {}>'.format(self.name)
+
+	def __str__(self):
+		return self.name

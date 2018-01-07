@@ -28,24 +28,16 @@ def index():
 		try:
 			sesh = db.session()
 			try:
-				user = sesh.query(models.User).filter_by(username=g.user.username).first()
-			except:
-				sesh.rollback()
-				raise
-			finally:
-				sesh.close()
-			user.sync_password = password
-			sesh = db.session()
-			try:
+				user = sesh.query(models.User).filter_by(id=g.user.id).first()
+				user.set_sync_password(password)
 				sesh.add(user)
-				sesh.commit()
+				flash("Sync password changed.")
 			except:
 				sesh.rollback()
 				raise
 			finally:
 				sesh.close()
-			flash("Sync password changed.")
-			return redirect(url_for('index'))
+				return redirect(url_for('index'))
 		except:
 			flash("Sync Password change failed.")
 			return redirect(url_for('index'))
@@ -56,6 +48,8 @@ def index():
 		friendly_name = g.user.first_name + ' ' + g.user.last_name
 	else:
 		friendly_name = g.user.username
+	# Build task list
+
 	return render_template(
 		'home.html',
 		friendly_name=friendly_name.title(),
