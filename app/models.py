@@ -139,6 +139,9 @@ class User(db.Model):
 	def add_task(self, org):
 		self.tasks.append(Task(org, self))
 
+	def add_to_org(self, org):
+		self.admin_orgs.append(org)
+
 	def __repr__(self):
 		return '<User %r>' % self.username
 
