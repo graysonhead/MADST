@@ -167,6 +167,14 @@ class Task(db.Model):
 	def __repr__(self):
 		return '<Task ID {}>'.format(self.id)
 
+	def change_status(self, status_id):
+		try:
+			status_id = int(status_id)
+		except:
+			self.status = status.id
+		else:
+			self.status = db.session.query(Status).filter_by(id=status_id).first()
+
 class Organization(db.Model):
 	__tablename__ = 'organization'
 	id = db.Column(db.Integer, primary_key=True)

@@ -35,6 +35,7 @@ def get_task(id):
 		}
 	except:
 		sesh.rollback()
+		raise
 	finally:
 		sesh.close()
 	return task_item
@@ -81,14 +82,35 @@ def abort_no_task(task_id):
 	if task_id not in tasks:
 		abort(404, message="Task {} doesn't exist".format(task_id))
 
+def abort_no_status(status_id):
+	abort(404, message="Status {} doesn't exist".format(status_id))
+
+
 parser = reqparse.RequestParser()
-parser.add_argument('task')
+parser.add_argument('status')
 
 class Task(Resource):
 	def get(self, task_id):
 		task = get_task(task_id)
 		return task
 
+	def put(self, task_id):
+		args = parser.parse_args()
+		sesh = db.session()
+		try:
+			taskdb = sesh.query(models.Task).filter_by(id=task_id).first()
+			try:
+				taskdb.change_status(args['status'])
+			except:
+				return abort_no_status(args['status'])
+			sesh.add(taskdb)
+			sesh.commit()
+		except:
+			sesh.rollback()
+			return abort_no_task(task_id)
+		finally:
+			sesh.close()
+		return get_task(task_id), 201
 	# def put(self, task_id):
 	# 	args = parser.parse_args()
 
