@@ -7,12 +7,14 @@ flask-login
 flask-permissions
 flask-sqlalchemy
 flask-WTF
+flask-restful
 Werkzeug
 sqlalchemy-migrate
 
 
-#DB Setup scratch
+#DB Setup Instructions
 
+from app import models, db
 new = models.Status('new')
 in_progress = models.Status('in progress')
 completed = models.Status('completed')
