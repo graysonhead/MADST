@@ -1,15 +1,8 @@
 from flask_restful import reqparse, abort, Api, Resource
 from app import api
 from flask import jsonify
-from app import db, models
+from app import db, models, crypt
 
-# tasks = {
-# 	'1': {
-# 		'task': 'create',
-# 		'username': 'Joe',
-# 		'password': 'lmfao'
-# 		}
-# }
 def get_task(id):
 	sesh = db.session
 	try:
@@ -29,7 +22,7 @@ def get_task(id):
 				'first_name': val.user.first_name.title(),
 				'last_name': val.user.last_name.title(),
 				'sync_username': val.user.sync_username,
-				'sync_password': val.user.sync_password
+				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
 			}
 
 		}
@@ -64,7 +57,7 @@ def get_tasks(org_id=False):
 					'first_name': val.user.first_name.title(),
 					'last_name': val.user.last_name.title(),
 					'sync_username': val.user.sync_username,
-					'sync_password': val.user.sync_password
+					'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
 				}
 
 

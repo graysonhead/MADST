@@ -1,4 +1,4 @@
-from app import db, config
+from app import db, config, crypt
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -184,6 +184,7 @@ class Organization(db.Model):
 	name = db.Column(db.String(120))
 	admin_ou = db.Column(db.String(120))
 	tasks = relationship("Task")
+	sync_key = db.Column(db.String(120))
 	admin_users = relationship(
 		"User",
 		secondary=admin_user_table,
@@ -192,6 +193,7 @@ class Organization(db.Model):
 
 	def __init__(self, name):
 		self.name = name.lower()
+		self.sync_key = crypt.genpass(32)
 
 	def __repr__(self):
 		return '<Organization {}>'.format(self.name)
@@ -201,6 +203,9 @@ class Organization(db.Model):
 
 	def add_task(self, user):
 		self.tasks.append(Task(self, user))
+
+	def gen_sync_key(self):
+		self.sync_key = crypt.genpass(32)
 
 
 class Status(db.Model):
