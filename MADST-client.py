@@ -16,6 +16,9 @@ def get_ou(ou):
 	except pywintypes.com_error:
 		raise
 
+def update_password(cn, password):
+	user = aduser.ADUser.from_cn(cn)
+	user.set_password(password)
 
 def add_ad_user(ou, cn, attributes=False):
 	''' Creates a new user in the designated OU '''
@@ -37,33 +40,49 @@ def check_user_exists(cn):
 	if user:
 		return True
 
-
-def getOu(ou):
-	try:
-		return adcontainer.ADContainer.from_dn(ou)
-	except pywintypes.com_error:
-		print('Something went wrong connecting to AD. Ensure that you are running this script on a machine connected to AD with admin credentials.')
-	else:
-		pass
-
-def decrypt(string, key):
-	cipher = AES.new(key,AES.MODE_ECB)
+def decrypt(string, pkey):
+	cipher = AES.new(pkey, AES.MODE_ECB)
 	passout = cipher.decrypt(base64.b64decode(string))
 	return passout.strip()
+
+def change_task_status(task_id, status_id):
+	requests.put(host + 'api/task/' + str(task_id), data={'status': status_id})
+
 
 ''' Lets do stuff '''
 password = r.json()['0']['user']['sync_password']
 password = decrypt(password, private_key).decode('utf-8')
+updated_users = 0
+added_users = 0
 
 for key, value in r.json().items():
 	if value['status']['id'] == 1:
 		cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+		password = value['user']['sync_password']
+		password = decrypt(password, private_key).decode('utf-8')
+
 		if check_user_exists(cn):
-			#update user
-			print('User exists')
+			try:
+				update_password(cn, password)
+				print('Updated User {}'.format(cn))
+				updated_users = updated_users + 1
+				change_task_status(value['id'], '3')
+			except:
+				change_task_status(value['id'], '4')
+
 		else:
 			# User doesn't exist, create them
-			add_ad_user(get_ou(value['organization']['admin_ou']), cn)
-			print('Added User')
+			try:
+				add_ad_user(get_ou(value['organization']['admin_ou']), cn)
+				print('Added User {}'.format(cn))
+				added_users = added_users + 1
+				change_task_status(value['id'], '3')
+			except:
+				change_task_status(value['id'], '4')
 	else:
 		print('No new issues')
+
+if added_users:
+	print("Added {} users".format(added_users))
+if updated_users:
+	print("Updated {} users".format(updated_users))

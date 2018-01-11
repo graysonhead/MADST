@@ -20,7 +20,7 @@ def getOu(ou):
 def detUserName(first, last):
 		''' Generate a standardized username based on namingScheme variable '''
 		if args.namingScheme == 'FirstL':
-			userName = first + last[0]
+		userName = first + last[0]
 		elif args.namingScheme == 'FLast':
 			userName = first[0] + last
 		elif args.namingScheme == 'First':
