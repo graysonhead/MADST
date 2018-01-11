@@ -58,7 +58,7 @@ def index():
 	)
 
 @app.route('/sec1', methods=['GET'])
-@required('admin')
+@required('Technician')
 @login_required
 def sec1():
 	log_pageview(request.path)

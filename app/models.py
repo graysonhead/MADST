@@ -89,9 +89,12 @@ class User(db.Model):
 	)
 	type = db.Column(db.String(50))
 
-	def __init__(self, email, password, roles=None):
+	def __init__(self, username, password, first_name, last_name, roles=None):
 		self.username = username.lower()
+		self.first_name = first_name
+		self.last_name = last_name
 		self.set_password(password)
+		self.gen_sync_username()
 
 	#Needed flask properties
 	@property
