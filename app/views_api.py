@@ -33,6 +33,7 @@ def get_task(id):
 		sesh.close()
 	return task_item
 
+
 def get_tasks(org_id=False):
 	sesh = db.session()
 	try:
@@ -81,6 +82,7 @@ def abort_no_status(status_id):
 
 parser = reqparse.RequestParser()
 parser.add_argument('status')
+
 
 class Task(Resource):
 	def get(self, task_id):
