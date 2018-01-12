@@ -18,7 +18,7 @@ def load_user(username):
 def before_request():
 	g.user = current_user
 
-
+@required('Technician')
 @login_required
 @app.route('/index', methods=['GET', 'POST'])
 def index():
