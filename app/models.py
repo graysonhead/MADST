@@ -213,7 +213,8 @@ class Organization(db.Model):
 		self.sync_key = crypt.genpass(32)
 
 	def add_template(self, name):
-		template = db.session.query(UserTemplate).filter_by(name=name).first()
+		# template = db.session.query(UserTemplate).filter_by(name=name).filter_by(org_id=self.id).first()
+		template = db.session.query(UserTemplate).filter(UserTemplate.name.like(name)).filter(UserTemplate.organization.like(self.id)).first()
 		if template:
 			self.templates.append(template)
 		else:

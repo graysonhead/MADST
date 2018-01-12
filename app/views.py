@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange
+from .forms import LoginForm, PasswordChange, AddName
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -77,10 +77,25 @@ def admin_orgs():
 
 @required('Admin')
 @login_required
-@app.route('/admin/org', methods=['GET'])
+@app.route('/admin/org', methods=['GET', 'POST'])
 def admin_org():
 	""" Allows viewing and modification of Organization Attributes"""
 	org_id = request.args.get('org_id', default = 1, type = int)
+	form = AddName()
+	if form.name.data:
+		sesh = db.session()
+		try:
+			org = sesh.query(models.Organization).filter_by(id=org_id).first()
+			org.add_template(form.name.data)
+			sesh.add(org)
+			sesh.commit()
+			flash("Added {} to {}".format(form.name.data, org.name))
+		except:
+			sesh.rollback()
+			flash("DB write failed", 'error')
+		finally:
+			sesh.close()
+		return(redirect(url_for("admin_org")))
 	sesh = db.session()
 	try:
 		org = sesh.query(models.Organization).filter_by(id=org_id).first()
@@ -89,8 +104,11 @@ def admin_org():
 		sesh.rollback()
 	finally:
 		sesh.close()
+
+
 	return render_template(
 		'admin_org.html',
+		form=form,
 		title='Organization Admin: {}'.format(org.name.title()),
 		org=org,
 		templates=templates

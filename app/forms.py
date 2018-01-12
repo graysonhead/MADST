@@ -10,3 +10,6 @@ class LoginForm(Form):
 
 class PasswordChange(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
+
+class AddName(Form):
+	name = StringField('Name', validators=[DataRequired()])
