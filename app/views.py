@@ -57,6 +57,59 @@ def index():
 		title='Home'
 	)
 
+@required('Admin')
+@login_required
+@app.route('/admin/orgs', methods=['GET'])
+def admin_orgs():
+	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
+	sesh = db.session()
+	try:
+		orgs = sesh.query(models.Organization).all()
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+	return render_template(
+		'admin_orgs.html',
+		title='Organization Admin',
+		orgs=orgs
+	)
+
+@required('Admin')
+@login_required
+@app.route('/admin/org', methods=['GET'])
+def admin_org():
+	""" Allows viewing and modification of Organization Attributes"""
+	org_id = request.args.get('org_id', default = 1, type = int)
+	sesh = db.session()
+	try:
+		org = sesh.query(models.Organization).filter_by(id=org_id).first()
+		templates = org.templates
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+	return render_template(
+		'admin_org.html',
+		title='Organization Admin: {}'.format(org.name.title()),
+		org=org,
+		templates=templates
+	)
+
+@required('Admin')
+@login_required
+@app.route('/admin/org/template', methods=['GET'])
+def admin_org_template(**kwargs):
+	""" Allows viewing and modification of Organization Attributes"""
+	# sesh = db.session()
+	# try:
+	# 	org = sesh.query(models.Organization).filter_by(id=org_id).first()
+	# except:
+	# 	sesh.rollback()
+	# finally:
+	# 	sesh.close()
+	return print(request.args)
+
 @app.route('/sec1', methods=['GET'])
 @required('Technician')
 @login_required

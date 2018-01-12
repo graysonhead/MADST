@@ -187,12 +187,14 @@ class Organization(db.Model):
 	name = db.Column(db.String(120))
 	admin_ou = db.Column(db.String(120))
 	tasks = relationship("Task")
+	templates = relationship("UserTemplate")
 	sync_key = db.Column(db.String(120))
 	admin_users = relationship(
 		"User",
 		secondary=admin_user_table,
 		back_populates="admin_orgs"
 	)
+	# user_templates = relationship("UserTemplates", uselist=True, back_populates="organization")
 
 	def __init__(self, name):
 		self.name = name.lower()
@@ -210,6 +212,13 @@ class Organization(db.Model):
 	def gen_sync_key(self):
 		self.sync_key = crypt.genpass(32)
 
+	def add_template(self, name):
+		template = db.session.query(UserTemplate).filter_by(name=name).first()
+		if template:
+			self.templates.append(template)
+		else:
+			self.templates.append(UserTemplate(name))
+
 
 class Status(db.Model):
 	__tablename__="status"
@@ -226,6 +235,67 @@ class Status(db.Model):
 
 	def __repr__(self):
 		return '<Status: {}>'.format(self.name)
+
+	def __str__(self):
+		return self.name
+
+
+class UserTemplate(db.Model):
+	__tablename__="user_template"
+	id = db.Column(db.Integer, primary_key=True)
+	organization = db.Column(db.Integer, db.ForeignKey('organization.id'))
+	name = db.Column(db.String(120), unique=True)
+	single_attributes = relationship("SingleAttributes")
+	multi_attributes = relationship("MultiAttributes")
+
+	def __init__(self, name):
+		self.name = name
+
+	def __repr__(self):
+		return '<Template: {}>'.format(self.name)
+
+	def __str__(self):
+		return self.name
+
+	def add_single_attribute(self, key, value):
+		self.single_attributes.append(SingleAttributes(key, value))
+
+	def add_multi_attribute(self, key, value):
+		self.multi_attributes.append(MultiAttributes(key, value))
+
+#
+class SingleAttributes(db.Model):
+	__tablename__="single_attributes"
+	id = db.Column(db.Integer, primary_key=True)
+	key = db.Column(db.String(120))
+	value = db.Column(db.String(120))
+	template = db.Column(db.Integer, db.ForeignKey('user_template.id'))
+
+
+	def __init__(self, key, value):
+		self.key = key
+		self.value = value
+
+	def __repr__(self):
+		return '<Single_Attribute: {}: {}>'.format(self.key, self.value)
+
+	def __str__(self):
+		return self.name
+
+class MultiAttributes(db.Model):
+	__tablename__="multi_attributes"
+	id = db.Column(db.Integer, primary_key=True)
+	key = db.Column(db.String(120))
+	value = db.Column(db.String(120))
+	template = db.Column(db.Integer, db.ForeignKey('user_template.id'))
+
+
+	def __init__(self, key, value):
+		self.key = key
+		self.value = value
+
+	def __repr__(self):
+		return '<Multi_Attribute: {}: {}>'.format(self.key, self.value)
 
 	def __str__(self):
 		return self.name
