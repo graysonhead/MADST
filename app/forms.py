@@ -1,6 +1,6 @@
 from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, TextAreaField
-from wtforms.validators import DataRequired, Length
+from wtforms import StringField, PasswordField, BooleanField, FormField, FieldList
+from wtforms.validators import DataRequired
 
 
 class LoginForm(Form):
@@ -8,8 +8,19 @@ class LoginForm(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
 	remember_me = BooleanField('remember_me', default=False)
 
+
 class PasswordChange(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
 
+
 class AddName(Form):
 	name = StringField('Name', validators=[DataRequired()])
+
+
+class KeyValue(Form):
+	key = StringField('Attribute Name', validators=[DataRequired()])
+	value = StringField('Value', validators=[DataRequired()])
+
+
+class AttributesForm(Form):
+	attributes = FieldList(FormField(KeyValue), min_entries=1)

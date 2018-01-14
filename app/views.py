@@ -1,13 +1,14 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange, AddName
+from .forms import LoginForm, PasswordChange, AddName, AttributesForm
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
 
 def log_pageview(request):
 	app.logger.info("Someone viewed %s" % request)
+
 
 @login_manager.user_loader
 def load_user(username):
@@ -17,6 +18,7 @@ def load_user(username):
 @app.before_request
 def before_request():
 	g.user = current_user
+
 
 @required('Technician')
 @login_required
@@ -119,14 +121,29 @@ def admin_org():
 @app.route('/admin/org/template', methods=['GET'])
 def admin_org_template(**kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
-	# sesh = db.session()
-	# try:
-	# 	org = sesh.query(models.Organization).filter_by(id=org_id).first()
-	# except:
-	# 	sesh.rollback()
-	# finally:
-	# 	sesh.close()
-	return print(request.args)
+	sesh = db.session()
+	form = AddName()
+	svform = AttributesForm()
+	try:
+		template = sesh.query(models.UserTemplate).filter_by(id=request.args.get('template_id', default=1, type=int)).first()
+		org = sesh.query(models.Organization).filter_by(id=template.organization).first()
+		templates = org.templates
+		single_attributes = template.single_attributes
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+
+	return render_template(
+		'admin_org_template.html',
+		form=form,
+		svform=svform,
+		single_attributes=single_attributes,
+		title='Template Admin: {} ({})'.format(template.name.title(), org.name.title()),
+		org=org,
+		templates=templates,
+		template=template
+	)
 
 @app.route('/sec1', methods=['GET'])
 @required('Technician')
