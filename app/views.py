@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange, AddName, AttributesForm
+from .forms import LoginForm, PasswordChange, AddName, AttributesForm, KeyValue
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -122,8 +122,12 @@ def admin_org():
 def admin_org_template(**kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
 	sesh = db.session()
+	""" Forms """
 	form = AddName()
 	svform = AttributesForm()
+	kvform = KeyValue()
+	""" Template will replace selected attribute with a form allowing for editing """
+	selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
 	try:
 		template = sesh.query(models.UserTemplate).filter_by(id=request.args.get('template_id', default=1, type=int)).first()
 		org = sesh.query(models.Organization).filter_by(id=template.organization).first()
@@ -138,10 +142,12 @@ def admin_org_template(**kwargs):
 		'admin_org_template.html',
 		form=form,
 		svform=svform,
+		kvform=kvform,
 		single_attributes=single_attributes,
 		title='Template Admin: {} ({})'.format(template.name.title(), org.name.title()),
 		org=org,
 		templates=templates,
+		selected_single_attribute=selected_single_attribute,
 		template=template
 	)
 

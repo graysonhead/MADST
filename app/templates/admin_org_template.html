@@ -23,12 +23,18 @@
         <h2>Template Attributes</h2>
         <div>
             <h3>Single Var Attributes:</h3>
-            {{ svform.hidden_tag() }}
-            <form action="" method="post" name="sv">
                 {% for sv in single_attributes %}
-                {{ svform.attributes }}
+                    {% if sv.id == selected_single_attribute %}
+                    <div>
+                        Form goes here
+                    </div>
+                    {% else %}
+                    <div>
+                        {{ sv.key }}:  {{ sv.value }} <a href={{ url_for('admin_org_template', template_id=template.id, selected_single_attribute=sv.id) }}>Edit</a>
+                    </div>
+                    {% endif %}
                 {% endfor %}
-                <input class="btn btn-primary" type="submit" value="Change">
+
             </form>
         </div>
     </div>
