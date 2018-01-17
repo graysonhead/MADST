@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange, AddName, AttributesForm, KeyValue
+from .forms import LoginForm, PasswordChange, AddName, KeyValueAdd, KeyValueModify
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -118,38 +118,86 @@ def admin_org():
 
 @required('Admin')
 @login_required
-@app.route('/admin/org/template', methods=['GET'])
+@app.route('/admin/org/template', methods=['GET', 'POST'])
 def admin_org_template(**kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
-	sesh = db.session()
-	""" Forms """
-	form = AddName()
-	svform = AttributesForm()
-	kvform = KeyValue()
-	""" Template will replace selected attribute with a form allowing for editing """
-	selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
-	try:
-		template = sesh.query(models.UserTemplate).filter_by(id=request.args.get('template_id', default=1, type=int)).first()
-		org = sesh.query(models.Organization).filter_by(id=template.organization).first()
-		templates = org.templates
-		single_attributes = template.single_attributes
-	except:
-		sesh.rollback()
-	finally:
-		sesh.close()
 
-	return render_template(
-		'admin_org_template.html',
-		form=form,
-		svform=svform,
-		kvform=kvform,
-		single_attributes=single_attributes,
-		title='Template Admin: {} ({})'.format(template.name.title(), org.name.title()),
-		org=org,
-		templates=templates,
-		selected_single_attribute=selected_single_attribute,
-		template=template
-	)
+	if request.method == 'POST':
+		selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
+		svform = KeyValueModify()
+		new_sv_form = KeyValueAdd()
+		form = AddName()
+		template_id = request.args.get('template_id', default=1, type=int)
+		if svform.key.data or svform.delete.data == True:
+			sesh = db.session()
+			try:
+				if selected_single_attribute:
+					single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
+					if svform.delete.data == True:
+						sesh.delete(single_atrib)
+						sesh.commit()
+						flash("Attribute Deleted")
+					else:
+						single_atrib.key = svform.key.data
+						single_atrib.value = svform.value.data
+						sesh.add(single_atrib)
+						sesh.commit()
+						flash("Attribute Editied")
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+		if new_sv_form.key.data:
+			return("Dataishere")
+			sesh = db.session()
+			try:
+				template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
+				template.add_single_attribute(new_sv_form.key.data, new_sv_form.value.data)
+				sesh.add(template)
+				sesh.commit()
+				flash("Attribute Added")
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+		return (redirect(url_for('admin_org_template', template_id=template_id)))
+	if request.method == 'GET':
+		""" Forms """
+		form = AddName()
+		svform = KeyValueModify()
+		new_sv_form = KeyValueAdd()
+		""" Template will replace selected attribute with a form allowing for editing """
+		selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
+		sesh = db.session()
+		try:
+			template = sesh.query(models.UserTemplate).filter_by(id=request.args.get('template_id', default=1, type=int)).first()
+			org = sesh.query(models.Organization).filter_by(id=template.organization).first()
+			templates = org.templates
+			single_attributes = template.single_attributes
+			""" Get Selected Attribute info to populate form, if selected """
+			if selected_single_attribute:
+				single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
+				svform.key.data = single_atrib.key
+				svform.value.data = single_atrib.value
+		except:
+			sesh.rollback()
+			raise
+		finally:
+			sesh.close()
+		return render_template(
+			'admin_org_template.html',
+			form=form,
+			svform=svform,
+			single_attributes=single_attributes,
+			title='Template Admin: {} ({})'.format(template.name.title(), org.name.title()),
+			org=org,
+			templates=templates,
+			selected_single_attribute=selected_single_attribute,
+			template=template,
+			new_sv_form=new_sv_form
+		)
 
 @app.route('/sec1', methods=['GET'])
 @required('Technician')

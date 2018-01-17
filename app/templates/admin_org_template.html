@@ -26,7 +26,9 @@
                 {% for sv in single_attributes %}
                     {% if sv.id == selected_single_attribute %}
                     <div>
-                        Form goes here
+                        <form action="" method="post" name="addkv">
+                            {{ svform.key }} {{ svform.value }} Remove {{ svform.delete }} <input class="btn btn-primary" type="submit" value="Change">
+                        </form>
                     </div>
                     {% else %}
                     <div>
@@ -34,8 +36,11 @@
                     </div>
                     {% endif %}
                 {% endfor %}
-
-            </form>
+            <div>
+                <form>
+                {{ new_sv_form.key }} {{ new_sv_form.value }} <input class="btn btn-primary" type="submit" value="Add">
+                </form>
+            </div>
         </div>
     </div>
     </div>

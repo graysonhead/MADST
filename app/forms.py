@@ -17,10 +17,11 @@ class AddName(Form):
 	name = StringField('Name', validators=[DataRequired()])
 
 
-class KeyValue(Form):
+class KeyValueAdd(Form):
 	key = StringField('Attribute Name', validators=[DataRequired()])
 	value = StringField('Value', validators=[DataRequired()])
 
-
-class AttributesForm(Form):
-	attributes = FieldList(FormField(KeyValue), min_entries=1)
+class KeyValueModify(Form):
+	key = StringField('Attribute Name', validators=[DataRequired()])
+	value = StringField('Value', validators=[DataRequired()])
+	delete = BooleanField('delete', default=False)
