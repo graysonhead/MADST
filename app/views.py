@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange, AddName, KeyValueAdd, KeyValueModify
+from .forms import LoginForm, PasswordChange, AddName, KeyValueAdd, KeyValueModify, MultiKeyValueAdd, MultiKeyValueModify
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -76,6 +76,14 @@ def admin_orgs():
 		title='Organization Admin',
 		orgs=orgs
 	)
+@required('Admin')
+@login_required
+@app.route('/admin', methods=['GET'])
+def admin():
+	return render_template(
+		'admin.html',
+		title='Admin'
+	)
 
 @required('Admin')
 @login_required
@@ -121,25 +129,29 @@ def admin_org():
 @app.route('/admin/org/template', methods=['GET', 'POST'])
 def admin_org_template(**kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
-
+	selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
+	selected_multi_attribute = request.args.get('selected_multi_attribute', default=0, type=int)
+	""" Forms """
+	svform = KeyValueModify()
+	new_sv_form = KeyValueAdd()
+	form = AddName()
+	mvform = MultiKeyValueModify()
+	new_mvform = MultiKeyValueAdd()
 	if request.method == 'POST':
-		selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
-		svform = KeyValueModify()
-		new_sv_form = KeyValueAdd()
-		form = AddName()
 		template_id = request.args.get('template_id', default=1, type=int)
-		if svform.key.data or svform.delete.data == True:
+		""" Single Value Logic """
+		if svform.mod_key.data or svform.mod_delete.data == True:
 			sesh = db.session()
 			try:
 				if selected_single_attribute:
 					single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
-					if svform.delete.data == True:
+					if svform.mod_delete.data == True:
 						sesh.delete(single_atrib)
 						sesh.commit()
-						flash("Attribute Deleted")
+						flash("Attribute {} Deleted".format(single_atrib.key + ': ' + single_atrib.value))
 					else:
-						single_atrib.key = svform.key.data
-						single_atrib.value = svform.value.data
+						single_atrib.key = svform.mod_key.data
+						single_atrib.value = svform.mod_value.data
 						sesh.add(single_atrib)
 						sesh.commit()
 						flash("Attribute Editied")
@@ -149,7 +161,6 @@ def admin_org_template(**kwargs):
 			finally:
 				sesh.close()
 		if new_sv_form.key.data:
-			return("Dataishere")
 			sesh = db.session()
 			try:
 				template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
@@ -162,25 +173,59 @@ def admin_org_template(**kwargs):
 				raise
 			finally:
 				sesh.close()
+		""" Multi Var Logic """
+		if mvform.mod_mkey.data or mvform.mod_mdelete.data == True:
+			sesh = db.session()
+			try:
+				if selected_multi_attribute:
+					multi_atrib = sesh.query(models.MultiAttributes).filter_by(id=selected_multi_attribute).first()
+					if mvform.mod_mdelete.data == True:
+						sesh.delete(multi_atrib)
+						sesh.commit()
+						flash("Attribute {} Deleted".format(multi_atrib.key + ': ' + multi_atrib.value))
+					else:
+						multi_atrib.key = mvform.mod_mkey.data
+						multi_atrib.value = mvform.mod_mvalue.data
+						sesh.add(multi_atrib)
+						sesh.commit()
+						flash("Attribute Editied")
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
+		if new_mvform.mkey.data:
+			sesh = db.session()
+			try:
+				template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
+				template.add_multi_attribute(new_mvform.mkey.data, new_mvform.mvalue.data)
+				sesh.add(template)
+				sesh.commit()
+				flash("Attribute Added")
+			except:
+				sesh.rollback()
+				raise
+			finally:
+				sesh.close()
 		return (redirect(url_for('admin_org_template', template_id=template_id)))
 	if request.method == 'GET':
-		""" Forms """
-		form = AddName()
-		svform = KeyValueModify()
-		new_sv_form = KeyValueAdd()
-		""" Template will replace selected attribute with a form allowing for editing """
-		selected_single_attribute = request.args.get('selected_single_attribute', default=0, type=int)
 		sesh = db.session()
 		try:
 			template = sesh.query(models.UserTemplate).filter_by(id=request.args.get('template_id', default=1, type=int)).first()
 			org = sesh.query(models.Organization).filter_by(id=template.organization).first()
 			templates = org.templates
 			single_attributes = template.single_attributes
+			multi_attributes = template.multi_attributes
 			""" Get Selected Attribute info to populate form, if selected """
 			if selected_single_attribute:
 				single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
-				svform.key.data = single_atrib.key
-				svform.value.data = single_atrib.value
+				svform.mod_key.data = single_atrib.key
+				svform.mod_value.data = single_atrib.value
+			""" Get Selected Multi Attribute to populate form, if selected """
+			if selected_multi_attribute:
+				multi_atrib = sesh.query(models.MultiAttributes).filter_by(id=selected_multi_attribute).first()
+				mvform.mod_mkey.data = multi_atrib.key
+				mvform.mod_mvalue.data = multi_atrib.value
 		except:
 			sesh.rollback()
 			raise
@@ -191,12 +236,16 @@ def admin_org_template(**kwargs):
 			form=form,
 			svform=svform,
 			single_attributes=single_attributes,
+			multi_attributes=multi_attributes,
 			title='Template Admin: {} ({})'.format(template.name.title(), org.name.title()),
 			org=org,
 			templates=templates,
 			selected_single_attribute=selected_single_attribute,
+			selected_multi_attribute=selected_multi_attribute,
 			template=template,
-			new_sv_form=new_sv_form
+			new_sv_form=new_sv_form,
+			mvform=mvform,
+			new_mvform=new_mvform
 		)
 
 @app.route('/sec1', methods=['GET'])

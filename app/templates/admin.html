@@ -1,0 +1,16 @@
+<!-- Extends base layout -->
+{%extends "base.html" %}
+
+{% block content %}
+<main role="main">
+        <!-- Jumbotron -->
+        <!-- Featured Class -->
+        <div class="jumbotron">
+            <p><h1>Multiple Active Directory Synchronization Tool</h1></p>
+        </div>
+    <div>
+        <a href={{ url_for("admin_orgs") }}> Organizations</a>
+    </div>
+</main>
+
+{% endblock %}

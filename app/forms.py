@@ -22,6 +22,17 @@ class KeyValueAdd(Form):
 	value = StringField('Value', validators=[DataRequired()])
 
 class KeyValueModify(Form):
-	key = StringField('Attribute Name', validators=[DataRequired()])
-	value = StringField('Value', validators=[DataRequired()])
-	delete = BooleanField('delete', default=False)
+	mod_key = StringField('Attribute Name', validators=[DataRequired()])
+	mod_value = StringField('Value', validators=[DataRequired()])
+	mod_delete = BooleanField('delete', default=False)
+
+
+class MultiKeyValueAdd(Form):
+	mkey = StringField('Attribute Name', validators=[DataRequired()])
+	mvalue = StringField('Value', validators=[DataRequired()])
+
+
+class MultiKeyValueModify(Form):
+	mod_mkey = StringField('Attribute Name', validators=[DataRequired()])
+	mod_mvalue = StringField('Value', validators=[DataRequired()])
+	mod_mdelete = BooleanField('delete', default=False)

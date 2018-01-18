@@ -26,8 +26,8 @@
                 {% for sv in single_attributes %}
                     {% if sv.id == selected_single_attribute %}
                     <div>
-                        <form action="" method="post" name="addkv">
-                            {{ svform.key }} {{ svform.value }} Remove {{ svform.delete }} <input class="btn btn-primary" type="submit" value="Change">
+                        <form action="" method="post" name="changekv">
+                            {{ svform.mod_key }} {{ svform.mod_value }} Remove {{ svform.mod_delete }} <input class="btn btn-primary" type="submit" value="Change">
                         </form>
                     </div>
                     {% else %}
@@ -37,8 +37,29 @@
                     {% endif %}
                 {% endfor %}
             <div>
-                <form>
+                <form action="" method="post" name="addkv">
                 {{ new_sv_form.key }} {{ new_sv_form.value }} <input class="btn btn-primary" type="submit" value="Add">
+                </form>
+            </div>
+        </div>
+                <div>
+            <h3>Multi Var Attributes:</h3>
+                {% for mv in multi_attributes %}
+                    {% if mv.id == selected_multi_attribute %}
+                    <div>
+                        <form action="" method="post" name="changekv">
+                            {{ mvform.mod_mkey }} {{ mvform.mod_mvalue }} Remove {{ mvform.mod_mdelete }} <input class="btn btn-primary" type="submit" value="Change">
+                        </form>
+                    </div>
+                    {% else %}
+                    <div>
+                        {{ mv.key }}:  {{ mv.value }} <a href={{ url_for('admin_org_template', template_id=template.id, selected_multi_attribute=mv.id) }}>Edit</a>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            <div>
+                <form action="" method="post" name="addkv">
+                {{ new_mvform.mkey }} {{ new_mvform.mvalue }} <input class="btn btn-primary" type="submit" value="Add">
                 </form>
             </div>
         </div>
