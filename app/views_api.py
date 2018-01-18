@@ -45,6 +45,7 @@ def get_tasks(org_id=False):
 		for i, val in enumerate(db_tasks):
 			task_item = {
 				'id': val.id,
+				'type': 'create',
 				'status': {
 					'id': val.status.id,
 					'name': val.status.name
@@ -59,14 +60,19 @@ def get_tasks(org_id=False):
 					'last_name': val.user.last_name.title(),
 					'sync_username': val.user.sync_username,
 					'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
+				},
+				'attributes': {
+					'single_attributes': {},
+					'multi_attributes': {}
 				}
-
-
 			}
+			if val.organization.templates[0].single_attributes[0].key:
+				for s in val.organization.templates[0].single_attributes:
+					task_item['attributes']['single_attributes'].update({s.key: s.value})
 			tasks.update({str(i): task_item})
 	except:
 		sesh.rollback()
-		raise
+		return ("An error occured")
 	finally:
 		sesh.close()
 		return tasks
