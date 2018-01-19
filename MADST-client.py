@@ -4,6 +4,7 @@ import base64
 from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad, aduser, adgroup, pyadexceptions
 import re
 import time
+import argparse
 
 
 host = 'http://10.233.51.213:5000/'
@@ -11,6 +12,7 @@ org_id = 3
 private_key = 'MAW9G6IHEQIANE2UD1YE4SCFIZGY6D3Y'
 updated_users = 0
 added_users = 0
+
 
 def get_ou(ou):
 	try:
@@ -51,9 +53,15 @@ def change_task_status(task_id, status_id):
 	requests.put(host + 'api/task/' + str(task_id), data={'status': status_id})
 
 
-
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='MADST Client', prog='MADST-client')
+	parser.add_argument('-d', '--dry-run', help='Shows you what actions would be taken', action='store_true')
+	args = parser.parse_args()
 while True:
-	r = requests.get('http://10.233.51.213:5000/api/tasks/{}'.format(org_id))
+	try:
+		r = requests.get(host + 'api/tasks/{}'.format(org_id))
+	except requests.exceptions.ConnectionError:
+		print("A connection error occured, check the host and port and try again.")
 	for key, value in r.json().items():
 		if value['status']['id'] == 1:
 			cn = value['user']['first_name'] + ' ' + value['user']['last_name']
@@ -66,8 +74,11 @@ while True:
 					print('Updated User {}'.format(cn))
 					updated_users = updated_users + 1
 					change_task_status(value['id'], '3')
+					print("Task {} changed to status {}".format(value['id'], '3'))
 				except:
 					change_task_status(value['id'], '4')
+					print("Task {} changed to status {}".format(value['id'], '4'))
+
 
 			else:
 				# User doesn't exist, create them
@@ -76,8 +87,10 @@ while True:
 					print('Added User {}'.format(cn))
 					added_users = added_users + 1
 					change_task_status(value['id'], '3')
+					print("Task {} changed to status {}".format(value['id'], '3'))
 				except:
 					change_task_status(value['id'], '4')
+					print("Task {} changed to status {}".format(value['id'], '4'))
 		else:
 			print('No new issues')
 
