@@ -1,11 +1,16 @@
 from flask.ext.sqlalchemy import SQLAlchemy
 import logging
-import config
 from logging.handlers import RotatingFileHandler
 from flask import Flask, g
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from flask_restful import Api
+import sys
 
+try:
+	import config
+except ImportError:
+	print("Copy the example config file and ensure it is named 'config.py'")
+	sys.exit(1)
 
 # Main flask app
 app = Flask(__name__)
