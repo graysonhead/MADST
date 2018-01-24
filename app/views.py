@@ -61,21 +61,39 @@ def index():
 
 @required('Admin')
 @login_required
-@app.route('/admin/orgs', methods=['GET'])
+@app.route('/admin/orgs', methods=['GET', 'POST'])
 def admin_orgs():
 	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
-	sesh = db.session()
-	try:
-		orgs = sesh.query(models.Organization).all()
-	except:
-		sesh.rollback()
-	finally:
-		sesh.close()
-	return render_template(
-		'admin_orgs.html',
-		title='Organization Admin',
-		orgs=orgs
-	)
+	form = AddName()
+	if request.method == 'POST':
+		name = form.name.data
+		sesh = db.session()
+		try:
+			org = models.Organization(name)
+			sesh.add(org)
+			sesh.commit()
+			flash('Added new organization {}.'.format(name))
+		except:
+			sesh.rollback()
+			flash('Failed to add new organization {}.'.format(name))
+			raise
+		finally:
+			sesh.close()
+		return (redirect(url_for('admin_orgs')))
+	if request.method == 'GET':
+		sesh = db.session()
+		try:
+			orgs = sesh.query(models.Organization).all()
+		except:
+			sesh.rollback()
+		finally:
+			sesh.close()
+		return render_template(
+			'admin_orgs.html',
+			title='Organization Admin',
+			form=form,
+			orgs=orgs
+		)
 @required('Admin')
 @login_required
 @app.route('/admin', methods=['GET'])

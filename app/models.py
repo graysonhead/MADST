@@ -199,6 +199,7 @@ class Organization(db.Model):
 	def __init__(self, name):
 		self.name = name.lower()
 		self.sync_key = crypt.genpass(32)
+		self.add_template('Admin')
 
 	def __repr__(self):
 		return '<Organization {}>'.format(self.name)
@@ -213,12 +214,7 @@ class Organization(db.Model):
 		self.sync_key = crypt.genpass(32)
 
 	def add_template(self, name):
-		# template = db.session.query(UserTemplate).filter_by(name=name).filter_by(org_id=self.id).first()
-		template = db.session.query(UserTemplate).filter(UserTemplate.name.like(name)).filter(UserTemplate.organization.like(self.id)).first()
-		if template:
-			self.templates.append(template)
-		else:
-			self.templates.append(UserTemplate(name))
+		self.templates.append(UserTemplate(name))
 
 
 class Status(db.Model):
