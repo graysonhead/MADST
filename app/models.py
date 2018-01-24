@@ -231,7 +231,8 @@ class Status(db.Model):
 		back_populates="status"
 	)
 
-	def __init__(self, name):
+	def __init__(self, id, name):
+		self.id = id
 		self.name = name
 
 	def __repr__(self):

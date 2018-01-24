@@ -14,24 +14,33 @@ else:
 						api.version(SQLALCHEMY_MIGRATE_REPO))
 
 from app import db, models
+""" Pre-Populate Statuses """
+sesh = db.session()
+try:
+	new = models.Status(1, 'new')
+	inprogress = models.Status(2, 'in progress')
+	completed = models.Status(3, 'completed')
+	failed = models.Status(4, 'failed')
+	sesh.add(new)
+	sesh.add(inprogress)
+	sesh.add(completed)
+	sesh.add(failed)
+	sesh.commit()
+except:
+	sesh.rollback()
+	raise
+finally:
+	sesh.close()
+""" Add admin user """
+sesh = db.session()
+try:
+	user = models.User('admin', 'admin', roles='Admin')
+	sesh.add(user)
+	sesh.commit()
+except:
+	sesh.rollback()
+	raise
+finally:
+	sesh.close()
 
-'''
-contrib = models.Contributor(first_name = 'Fat', last_name = 'Murderer', email = 'fuckingbitches@gmail.com')
-db.session.add(contrib)
-db.session.commit()
-cntrb1 = db.session.query(models.Contributor).filter_by(email='fuckingbitches@gmail.com').first()
-course = models.Course(contributor_id = cntrb1.id, name = 'Get Swole with the Fat Murderer')
-db.session.add(course)
-db.session.commit()
-crs1 = db.session.query(models.Course).filter_by(name = 'Get Swole with the Fat Murderer').first()
-class1 = models.Classes(course_id = crs1.id, name = 'Get Swole: week 1', description = 'This week, we are going to focus on getting swole', video_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-db.session.add(class1)
-db.session.commit()
-contrib_lmbm = models.Contributor(first_name = 'lance', last_name = 'McBuffMuscles', email = 'iloveprotienpowder@gmail.com')
-db.session.add(contrib_lmbm)
-db.session.commit()
-cntrb2 = db.session.query(models.Contributor).filter_by(email='iloveprotienpowder@gmail.com').first()
-course_lmbm = models.Course(contributor_id = cntrb2.id, name = 'Advanced upper Body Techniques', description = 'Get the arms, chest, and shallow woman you\'ve always dreamed of!')
-db.session.add(course_lmbm)
-db.session.commit()
-'''
+print("DB Initialized")
