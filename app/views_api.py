@@ -23,9 +23,26 @@ def get_task(id):
 				'last_name': val.user.last_name.title(),
 				'sync_username': val.user.sync_username,
 				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
+			},
+		'attributes': {
+			'single_attributes': {},
+			'multi_attributes': {}
 			}
-
 		}
+		try:
+			val.organization.templates[0].single_attributes[0].key
+		except NameError:
+			pass
+		else:
+			for s in val.organization.templates[0].single_attributes:
+				task_item['attributes']['single_attributes'].update({s.key: s.value})
+		try:
+			val.organization.templates[0].multi_attributes[0].key
+		except NameError:
+			pass
+		else:
+			for s in val.organization.templates[0].multi_attributes:
+				task_item['attributes']['multi_attributes'].update({s.key: s.value})
 	except:
 		sesh.rollback()
 		raise
@@ -66,9 +83,20 @@ def get_tasks(org_id=False):
 					'multi_attributes': {}
 				}
 			}
-			if val.organization.templates[0].single_attributes[0].key:
+			try:
+				val.organization.templates[0].single_attributes[0].key
+			except NameError:
+				pass
+			else:
 				for s in val.organization.templates[0].single_attributes:
 					task_item['attributes']['single_attributes'].update({s.key: s.value})
+			try:
+				val.organization.templates[0].multi_attributes[0].key
+			except NameError:
+				pass
+			else:
+				for s in val.organization.templates[0].multi_attributes:
+					task_item['attributes']['multi_attributes'].update({s.key: s.value})
 			tasks.update({str(i): task_item})
 	except:
 		sesh.rollback()
