@@ -1,6 +1,5 @@
 <!-- Extends base layout -->
 {%extends "base.html" %}
-
 {% block content %}
 <main role="main">
     <div class="jumbotron">
@@ -15,8 +14,14 @@
         {{ form.hidden_tag() }}
         <form action="" method="post" name="add">
             {{ form.name.label }} {{ form.name }}
-            <input class="btn btn-primary" type="submit" value="Change">
+            <input class="btn btn-primary" type="submit" value="Add">
         </form>
+    </div>
+    <div>
+        <h2>Admin Actions</h2>
+        <button class="btn btn-default" data-toggle="confirmation">Confirmation</button>
+        <input class="btn btn-success" value="Resync All Users" onclick="location.href = '{{ url_for('admin_org', org_id=org.id, resync=1) }}';">
+        <input class="btn btn-danger" data-toggle="confirmation" value="Delete" onclick="location.href = '{{ url_for('admin_org', org_id=org.id, delete=1) }}';">
     </div>
 </main>
 

@@ -4,7 +4,9 @@
 {% block content %}
 <main role="main">
     <div class="jumbotron">
-            <p><h1>Organization Admin: {{ org.name }}</h1></p>
+            <p><h1>Organization Admin: {{ org.name }}</h1>
+            <br> <h2> Template: {{ template.name }}</h2>
+            </p>
     </div>
     <div class="row">
             <div class="col-4"><h2>User Templates</h2>
@@ -13,11 +15,11 @@
             <a href={{ url_for('admin_org_template',template_id=i.id) }}>{{ i.name.title() }}</a>
         </div>
         {% endfor %}
-        {{ form.hidden_tag() }}
-        <form action="" method="post" name="add">
-            {{ form.name.label }} {{ form.name }}
-            <input class="btn btn-primary" type="submit" value="Change">
-        </form>
+
+                <div>
+                     <h2>Admin Actions</h2>
+                     <input class="btn btn-danger" data-toggle="confirmation" value="Delete" onclick="location.href = '{{ url_for('admin_org_template', template_id=template.id, delete=1) }}';">
+                </div>
     </div>
     <div class="col-8">
         <h2>Template Attributes</h2>
@@ -64,6 +66,7 @@
             </div>
         </div>
     </div>
+
     </div>
 </main>
 

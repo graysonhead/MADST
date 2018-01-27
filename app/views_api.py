@@ -30,19 +30,17 @@ def get_task(id):
 			}
 		}
 		try:
-			val.organization.templates[0].single_attributes[0].key
-		except NameError:
+			if val.organization.templates[0].single_attributes[0]:
+				for s in val.organization.templates[0].single_attributes:
+					task_item['attributes']['single_attributes'].update({s.key: s.value})
+		except IndexError:
 			pass
-		else:
-			for s in val.organization.templates[0].single_attributes:
-				task_item['attributes']['single_attributes'].update({s.key: s.value})
 		try:
-			val.organization.templates[0].multi_attributes[0].key
-		except NameError:
+			if val.organization.templates[0].multi_attributes[0]:
+				for s in val.organization.templates[0].multi_attributes:
+					task_item['attributes']['multi_attributes'].update({s.key: s.value})
+		except IndexError:
 			pass
-		else:
-			for s in val.organization.templates[0].multi_attributes:
-				task_item['attributes']['multi_attributes'].update({s.key: s.value})
 	except:
 		sesh.rollback()
 		raise
@@ -84,23 +82,21 @@ def get_tasks(org_id=False):
 				}
 			}
 			try:
-				val.organization.templates[0].single_attributes[0].key
-			except NameError:
+				if val.organization.templates[0].single_attributes[0]:
+					for s in val.organization.templates[0].single_attributes:
+							task_item['attributes']['single_attributes'].update({s.key: s.value})
+			except IndexError:
 				pass
-			else:
-				for s in val.organization.templates[0].single_attributes:
-					task_item['attributes']['single_attributes'].update({s.key: s.value})
 			try:
-				val.organization.templates[0].multi_attributes[0].key
-			except NameError:
+				if val.organization.templates[0].multi_attributes[0]:
+					for s in val.organization.templates[0].multi_attributes:
+							task_item['attributes']['multi_attributes'].update({s.key: s.value})
+			except IndexError:
 				pass
-			else:
-				for s in val.organization.templates[0].multi_attributes:
-					task_item['attributes']['multi_attributes'].update({s.key: s.value})
 			tasks.update({str(i): task_item})
 	except:
 		sesh.rollback()
-		return ("An error occured")
+		return {"Error": "True"}
 	finally:
 		sesh.close()
 		return tasks
