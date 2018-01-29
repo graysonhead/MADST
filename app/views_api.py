@@ -2,6 +2,13 @@ from flask_restful import reqparse, abort, Api, Resource
 from app import api
 from flask import jsonify
 from app import db, models, crypt
+import re
+
+def atrib_regex(username, firstname, lastname, string):
+	''' Perform string replacement on Attribute values '''
+	string = re.sub(r"%userName%", username, string)
+	string = re.sub(r"%firstName%", firstname, string)
+	return re.sub(r"%lastName%", lastname, string)
 
 def get_task(id):
 	sesh = db.session
@@ -32,13 +39,13 @@ def get_task(id):
 		try:
 			if val.organization.templates[0].single_attributes[0]:
 				for s in val.organization.templates[0].single_attributes:
-					task_item['attributes']['single_attributes'].update({s.key: s.value})
+					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
 		except IndexError:
 			pass
 		try:
 			if val.organization.templates[0].multi_attributes[0]:
 				for s in val.organization.templates[0].multi_attributes:
-					task_item['attributes']['multi_attributes'].update({s.key: s.value})
+					task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
 		except IndexError:
 			pass
 	except:
@@ -84,13 +91,13 @@ def get_tasks(org_id=False):
 			try:
 				if val.organization.templates[0].single_attributes[0]:
 					for s in val.organization.templates[0].single_attributes:
-							task_item['attributes']['single_attributes'].update({s.key: s.value})
+							task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
 			except IndexError:
 				pass
 			try:
 				if val.organization.templates[0].multi_attributes[0]:
 					for s in val.organization.templates[0].multi_attributes:
-							task_item['attributes']['multi_attributes'].update({s.key: s.value})
+							task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
 			except IndexError:
 				pass
 			tasks.update({str(i): task_item})
