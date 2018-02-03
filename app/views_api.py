@@ -3,6 +3,26 @@ from app import api
 from flask import jsonify
 from app import db, models, crypt
 import re
+from functools import wraps
+
+key_parser = reqparse.RequestParser()
+key_parser.add_argument('apikey')
+key_parser.add_argument('secret')
+
+
+def api_auth(apikey, secret):
+	sesh = db.session()
+	try:
+		org = sesh.query(models.Organization).filter_by(apikey=apikey).first()
+		if org.apikey == apikey and org.sync_key == secret:
+			return False
+		else:
+			return True
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+
 
 def atrib_regex(username, firstname, lastname, string):
 	''' Perform string replacement on Attribute values '''
@@ -10,10 +30,11 @@ def atrib_regex(username, firstname, lastname, string):
 	string = re.sub(r"%firstName%", firstname, string)
 	return re.sub(r"%lastName%", lastname, string)
 
-def get_task(id):
+
+def get_task(task_id):
 	sesh = db.session
 	try:
-		val = sesh.query(models.Task).filter_by(id=id).first()
+		val = sesh.query(models.Task).filter_by(id=task_id).first()
 		task_item = {
 			'id': val.id,
 			'status': {
@@ -58,7 +79,9 @@ def get_task(id):
 
 def get_tasks(org_id=False):
 	sesh = db.session()
+	args = key_parser.parse_args()
 	try:
+		# Check for auth
 		tasks = {}
 		if org_id:
 			db_tasks = sesh.query(models.Task).filter_by(organization_id=org_id).all()
@@ -101,12 +124,15 @@ def get_tasks(org_id=False):
 			except IndexError:
 				pass
 			tasks.update({str(i): task_item})
+			return tasks
+		else:
+			return {"Error": "Incorrect authentication or not authorized."}
 	except:
 		sesh.rollback()
 		return {"Error": "True"}
 	finally:
 		sesh.close()
-		return tasks
+
 
 
 def abort_no_task(task_id):
@@ -123,10 +149,16 @@ parser.add_argument('status')
 
 class Task(Resource):
 	def get(self, task_id):
+		keyargs = key_parser.parse_args()
+		if api_auth(keyargs['apikey'], keyargs['secret']):
+			return {"Error": True, "Message": "Auth Failure"}
 		task = get_task(task_id)
 		return task
 
 	def put(self, task_id):
+		keyargs = key_parser.parse_args()
+		if api_auth(keyargs['apikey'], keyargs['secret']):
+			return {"Error": True, "Message": "Auth Failure"}
 		args = parser.parse_args()
 		sesh = db.session()
 		try:
@@ -149,16 +181,26 @@ class Task(Resource):
 
 class Tasks(Resource):
 	def get(self):
+		keyargs = key_parser.parse_args()
+		if api_auth(keyargs['apikey'], keyargs['secret']):
+			return {"Error": True, "Message": "Auth Failure"}
 		tasks = get_tasks()
 		return tasks
 
+
 class Tasks_filtered(Resource):
 	def get(self, org_id):
+		keyargs = key_parser.parse_args()
+		if api_auth(keyargs['apikey'], keyargs['secret']):
+			return {"Error": True, "Message": "Auth Failure"}
 		tasks = get_tasks(org_id)
 		return tasks
 
 class Tasks_Count(Resource):
 	def get(self):
+		keyargs = key_parser.parse_args()
+		if api_auth(keyargs['apikey'], keyargs['secret']):
+			return {"Error": True, "Message": "Auth Failure"}
 		tasks = get_tasks()
 		return { 'count': len(tasks)}
 

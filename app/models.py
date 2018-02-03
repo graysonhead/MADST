@@ -2,6 +2,8 @@ from app import db, config, crypt
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
+import os
+from binascii import hexlify
 import datetime
 from hashlib import md5
 
@@ -189,6 +191,7 @@ class Organization(db.Model):
 	tasks = relationship("Task")
 	templates = relationship("UserTemplate")
 	sync_key = db.Column(db.String(120))
+	apikey = db.Column(db.String(120))
 	admin_users = relationship(
 		"User",
 		secondary=admin_user_table,
@@ -200,6 +203,7 @@ class Organization(db.Model):
 		self.name = name.lower()
 		self.sync_key = crypt.genpass(32)
 		self.add_template('Admin')
+		self.gen_api_key()
 
 	def __repr__(self):
 		return '<Organization {}>'.format(self.name)
@@ -212,6 +216,9 @@ class Organization(db.Model):
 
 	def gen_sync_key(self):
 		self.sync_key = crypt.genpass(32)
+
+	def gen_api_key(self):
+		self.apikey = hexlify(os.urandom(18)).decode()
 
 	def add_template(self, name):
 		self.templates.append(UserTemplate(name))
