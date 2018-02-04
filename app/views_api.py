@@ -148,10 +148,18 @@ def api_task(task_id):
 			sesh.close()
 		return jsonify(task_fetch(task_id)), 201
 
-
+@app.route('/api/tasks', methods=['GET'])
+@api_key_required()
 def get_tasks(org_id=False):
-	if org_id:
-		return jsonify(tasks_fetch(org_id))
-	else:
-		return jsonify(tasks_fetch())
-
+	org_id = request.args.get('org_id', default='', type=int)
+	# Begin GET block
+	if request.method == 'GET':
+		if org_id:
+			tasks = tasks_fetch(org_id)
+			if tasks:
+				return jsonify(tasks)
+			else:
+				return jsonify({"Error": "Organization doesn't exist"}), 404
+		else:
+			return jsonify(tasks_fetch())
+	# End GET block
