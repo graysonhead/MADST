@@ -56,16 +56,23 @@ def tasks_fetch(org_id=False):
 			try:
 				if val.organization.templates[0].multi_attributes[0]:
 					for s in val.organization.templates[0].multi_attributes:
-						task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username,
+						if s.key in task_item['attributes']['multi_attributes']:
+							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
 																							   val.user.first_name,
 																							   val.user.last_name,
-																							   s.value)})
+																							   s.value))
+						else:
+							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																						val.user.first_name,
+																						val.user.last_name,
+																						s.value))]
 			except IndexError:
 				pass
 			tasks.update({str(i): task_item})
 		return tasks
 	except:
 		sesh.rollback()
+		raise
 	finally:
 		sesh.close()
 
@@ -104,8 +111,17 @@ def task_fetch(task_id):
 			pass
 		try:
 			if val.organization.templates[0].multi_attributes[0]:
-				for s in val.organization.templates[0].multi_attributes:
-					task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+					for s in val.organization.templates[0].multi_attributes:
+						if s.key in task_item['attributes']['multi_attributes']:
+							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
+																							   val.user.first_name,
+																							   val.user.last_name,
+																							   s.value))
+						else:
+							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																						val.user.first_name,
+																						val.user.last_name,
+																						s.value))]
 		except IndexError:
 			pass
 	except:
