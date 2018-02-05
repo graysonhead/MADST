@@ -1,8 +1,9 @@
-from flask_restful import reqparse, abort, Api, Resource
-from app import api
+from flask import request
 from flask import jsonify
-from app import db, models, crypt
+from app import db, models, crypt, app
+from .decorators import api_key_required
 import re
+
 
 def atrib_regex(username, firstname, lastname, string):
 	''' Perform string replacement on Attribute values '''
@@ -10,53 +11,20 @@ def atrib_regex(username, firstname, lastname, string):
 	string = re.sub(r"%firstName%", firstname, string)
 	return re.sub(r"%lastName%", lastname, string)
 
-def get_task(id):
-	sesh = db.session
-	try:
-		val = sesh.query(models.Task).filter_by(id=id).first()
-		task_item = {
-			'id': val.id,
-			'status': {
-				'id': val.status.id,
-				'name': val.status.name
-			},
-			'organization': {
-				'id': val.organization_id,
-				'name': val.organization.name,
-				'admin_ou': val.organization.admin_ou
-			},
-			'user': {
-				'first_name': val.user.first_name.title(),
-				'last_name': val.user.last_name.title(),
-				'sync_username': val.user.sync_username,
-				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
-			},
-		'attributes': {
-			'single_attributes': {},
-			'multi_attributes': {}
-			}
-		}
-		try:
-			if val.organization.templates[0].single_attributes[0]:
-				for s in val.organization.templates[0].single_attributes:
-					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
-		except IndexError:
-			pass
-		try:
-			if val.organization.templates[0].multi_attributes[0]:
-				for s in val.organization.templates[0].multi_attributes:
-					task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
-		except IndexError:
-			pass
-	except:
-		sesh.rollback()
-		raise
-	finally:
-		sesh.close()
-	return task_item
+
+def org_not_exist():
+	return jsonify({"Error": "Organization doesn't exist"}), 404
+
+def bad_request_data(data):
+	return jsonify({"Error": "Bad request data", "RequestData": data}), 406
+
+def get_billable_users(org_id):
+	sesh = db.session()
+	org = sesh.query(models.Organization).filter_by(id=org_id).first()
+	return org.billable_users
 
 
-def get_tasks(org_id=False):
+def tasks_fetch(org_id=False):
 	sesh = db.session()
 	try:
 		tasks = {}
@@ -91,81 +59,178 @@ def get_tasks(org_id=False):
 			try:
 				if val.organization.templates[0].single_attributes[0]:
 					for s in val.organization.templates[0].single_attributes:
-							task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+						task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username,
+																								val.user.first_name,
+																								val.user.last_name,
+																								s.value)})
 			except IndexError:
 				pass
 			try:
 				if val.organization.templates[0].multi_attributes[0]:
 					for s in val.organization.templates[0].multi_attributes:
-							task_item['attributes']['multi_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+						if s.key in task_item['attributes']['multi_attributes']:
+							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
+																							   val.user.first_name,
+																							   val.user.last_name,
+																							   s.value))
+						else:
+							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																						val.user.first_name,
+																						val.user.last_name,
+																						s.value))]
 			except IndexError:
 				pass
 			tasks.update({str(i): task_item})
+		return tasks
 	except:
 		sesh.rollback()
-		return {"Error": "True"}
+		raise
 	finally:
 		sesh.close()
-		return tasks
 
 
-def abort_no_task(task_id):
-	if task_id not in tasks:
-		abort(404, message="Task {} doesn't exist".format(task_id))
+def task_fetch(task_id):
+	sesh = db.session
+	try:
+		val = sesh.query(models.Task).filter_by(id=task_id).first()
+		task_item = {
+			'id': val.id,
+			'status': {
+				'id': val.status.id,
+				'name': val.status.name
+			},
+			'organization': {
+				'id': val.organization_id,
+				'name': val.organization.name,
+				'admin_ou': val.organization.admin_ou
+			},
+			'user': {
+				'first_name': val.user.first_name.title(),
+				'last_name': val.user.last_name.title(),
+				'sync_username': val.user.sync_username,
+				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
+			},
+		'attributes': {
+			'single_attributes': {},
+			'multi_attributes': {}
+			}
+		}
+		try:
+			if val.organization.templates[0].single_attributes[0]:
+				for s in val.organization.templates[0].single_attributes:
+					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+		except IndexError:
+			pass
+		try:
+			if val.organization.templates[0].multi_attributes[0]:
+					for s in val.organization.templates[0].multi_attributes:
+						if s.key in task_item['attributes']['multi_attributes']:
+							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
+																							   val.user.first_name,
+																							   val.user.last_name,
+																							   s.value))
+						else:
+							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																						val.user.first_name,
+																						val.user.last_name,
+																						s.value))]
+		except IndexError:
+			pass
+	except:
+		sesh.rollback()
+		raise
+	finally:
+		sesh.close()
+	return task_item
 
-def abort_no_status(status_id):
-	abort(404, message="Status {} doesn't exist".format(status_id))
 
-
-parser = reqparse.RequestParser()
-parser.add_argument('status')
-
-
-class Task(Resource):
-	def get(self, task_id):
-		task = get_task(task_id)
-		return task
-
-	def put(self, task_id):
-		args = parser.parse_args()
+@app.route('/api/task/<task_id>', methods=['GET', 'PUT', 'POST'])
+@api_key_required()
+def api_task(task_id):
+	# Begin GET block
+	if request.method == 'GET':
+		return jsonify(task_fetch(task_id))
+	# End GET block
+	# Begin PUT block
+	elif request.method == 'PUT':
+		try:
+			data = request.get_json()
+			status_id = data['status']
+		except AttributeError:
+			return bad_request_data(data)
+		except KeyError:
+			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
 		sesh = db.session()
 		try:
 			taskdb = sesh.query(models.Task).filter_by(id=task_id).first()
 			try:
-				taskdb.change_status(args['status'])
+				taskdb.change_status(status_id)
 			except:
-				return abort_no_status(args['status'])
+				return jsonify({"Error": "No status code {} exists".format(status_id)}), 404
 			sesh.add(taskdb)
 			sesh.commit()
 		except:
 			sesh.rollback()
-			return abort_no_task(task_id)
+			return jsonify({"Error": "There is no task with id{}".format(task_id)}), 404
 		finally:
 			sesh.close()
-		return get_task(task_id), 201
-	# def put(self, task_id):
-	# 	args = parser.parse_args()
+		return jsonify(task_fetch(task_id)), 201
+	# End PUT block
+
+@app.route('/api/tasks', methods=['GET'])
+@api_key_required()
+def get_tasks(org_id=False):
+	org_id = request.args.get('org_id', default='', type=int)
+	# Begin GET block
+	if request.method == 'GET':
+		if org_id:
+			tasks = tasks_fetch(org_id)
+			if tasks:
+				return jsonify(tasks)
+			else:
+				return org_not_exist()
+		else:
+			return jsonify(tasks_fetch())
+	# End GET block
+
+@app.route('/api/org/users/count', methods=['GET', 'PUT'])
+@api_key_required()
+def api_org_usercount():
+	# Begin GET block
+	org_id = request.args.get('org_id', default=0, type=int)
+	if request.method == 'GET':
+		try:
+			billable_users = get_billable_users(org_id)
+		except:
+			return jsonify({"Error": "An internal server error occured"}), 500
+		if billable_users:
+			return jsonify({"Billable_Users": billable_users})
+		else:
+			return org_not_exist()
+	# End GET block
+	# Begin PUT block
+	elif request.method == 'PUT':
+		try:
+			data = request.get_json()
+			billable_users = data['billable_users']
+		except AttributeError:
+			return bad_request_data(data)
+		except KeyError:
+			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
+		try:
+			sesh = db.session()
+			org = sesh.query(models.Organization).filter_by(id=org_id).first()
+			if org is None:
+				return org_not_exist()
+			org.billable_users = billable_users
+			sesh.add(org)
+			sesh.commit()
+			return jsonify({"Billable_Users": get_billable_users(org_id)})
+		except:
+			sesh.rollback()
+			raise
+		finally:
+			sesh.close()
+	#end PUT block
 
 
-class Tasks(Resource):
-	def get(self):
-		tasks = get_tasks()
-		return tasks
-
-class Tasks_filtered(Resource):
-	def get(self, org_id):
-		tasks = get_tasks(org_id)
-		return tasks
-
-class Tasks_Count(Resource):
-	def get(self):
-		tasks = get_tasks()
-		return { 'count': len(tasks)}
-
-
-
-api.add_resource(Tasks_Count, '/api/tasks/count')
-api.add_resource(Tasks, '/api/tasks')
-api.add_resource(Tasks_filtered, '/api/tasks/<org_id>')
-api.add_resource(Task, '/api/task/<task_id>')
-api.add_resource(Tasks, )
