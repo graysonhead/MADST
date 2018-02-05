@@ -12,6 +12,18 @@ def atrib_regex(username, firstname, lastname, string):
 	return re.sub(r"%lastName%", lastname, string)
 
 
+def org_not_exist():
+	return jsonify({"Error": "Organization doesn't exist"}), 404
+
+def bad_request_data(data):
+	return jsonify({"Error": "Bad request data", "RequestData": data}), 406
+
+def get_billable_users(org_id):
+	sesh = db.session()
+	org = sesh.query(models.Organization).filter_by(id=org_id).first()
+	return org.billable_users
+
+
 def tasks_fetch(org_id=False):
 	sesh = db.session()
 	try:
@@ -145,7 +157,7 @@ def api_task(task_id):
 			data = request.get_json()
 			status_id = data['status']
 		except AttributeError:
-			return jsonify({"Error": "Bad request data", "RequestData": data}), 406
+			return bad_request_data(data)
 		except KeyError:
 			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
 		sesh = db.session()
@@ -163,6 +175,7 @@ def api_task(task_id):
 		finally:
 			sesh.close()
 		return jsonify(task_fetch(task_id)), 201
+	# End PUT block
 
 @app.route('/api/tasks', methods=['GET'])
 @api_key_required()
@@ -175,7 +188,49 @@ def get_tasks(org_id=False):
 			if tasks:
 				return jsonify(tasks)
 			else:
-				return jsonify({"Error": "Organization doesn't exist"}), 404
+				return org_not_exist()
 		else:
 			return jsonify(tasks_fetch())
 	# End GET block
+
+@app.route('/api/org/users/count', methods=['GET', 'PUT'])
+@api_key_required()
+def api_org_usercount():
+	# Begin GET block
+	org_id = request.args.get('org_id', default=0, type=int)
+	if request.method == 'GET':
+		try:
+			billable_users = get_billable_users(org_id)
+		except:
+			return jsonify({"Error": "An internal server error occured"}), 500
+		if billable_users:
+			return jsonify({"Billable_Users": billable_users})
+		else:
+			return org_not_exist()
+	# End GET block
+	# Begin PUT block
+	elif request.method == 'PUT':
+		try:
+			data = request.get_json()
+			billable_users = data['billable_users']
+		except AttributeError:
+			return bad_request_data(data)
+		except KeyError:
+			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
+		try:
+			sesh = db.session()
+			org = sesh.query(models.Organization).filter_by(id=org_id).first()
+			if org is None:
+				return org_not_exist()
+			org.billable_users = billable_users
+			sesh.add(org)
+			sesh.commit()
+			return jsonify({"Billable_Users": get_billable_users(org_id)})
+		except:
+			sesh.rollback()
+			raise
+		finally:
+			sesh.close()
+	#end PUT block
+
+

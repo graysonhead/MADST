@@ -192,6 +192,7 @@ class Organization(db.Model):
 	templates = relationship("UserTemplate")
 	sync_key = db.Column(db.String(120))
 	apikey = db.Column(db.String(120))
+	billable_users = db.Column(db.Integer)
 	admin_users = relationship(
 		"User",
 		secondary=admin_user_table,
@@ -250,6 +251,7 @@ class UserTemplate(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	organization = db.Column(db.Integer, db.ForeignKey('organization.id'))
 	name = db.Column(db.String(120), unique=True)
+	user_ou = db.Column(db.String(120))
 	single_attributes = relationship("SingleAttributes")
 	multi_attributes = relationship("MultiAttributes")
 
