@@ -57,12 +57,14 @@ def decrypt(string, pkey):
 def change_task_status(task_id, status_id):
 	requests.put(config.host + 'api/task/'+str(task_id), params={'apikey': config.apikey, 'secret': config.private_key}, json={'status': status_id})
 
-
+test = 1
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='MADST Client', prog='MADST-client')
 	parser.add_argument('-d', '--dry-run', help='Shows you what actions would be taken', action='store_true')
 	args = parser.parse_args()
+if test:
+	print("Running in test mode.")
 while True:
 	try:
 		params= {'apikey': config.apikey, 'secret': config.private_key, 'org_id': config.org_id}
@@ -79,23 +81,28 @@ while True:
 			password = value['user']['sync_password']
 			password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 			if check_user_exists(cn):
-				try:
-					update_password(cn, password)
-					print('Updated User {}'.format(cn))
-					updated_users = updated_users + 1
-					change_task_status(value['id'], '3')
-					print("Task {} changed to status {}".format(value['id'], '3'))
-				except:
-					change_task_status(value['id'], '4')
-					print("Task {} changed to status {}".format(value['id'], '4'))
+				print("Skipping created user")
+				# try:
+				# 	update_password(cn, password)
+				# 	print('Updated User {}'.format(cn))
+				# 	updated_users = updated_users + 1
+				# 	change_task_status(value['id'], '3')
+				# 	print("Task {} changed to status {}".format(value['id'], '3'))
+				# except:
+				# 	change_task_status(value['id'], '4')
+				# 	print("Task {} changed to status {}".format(value['id'], '4'))
 			else:
 				# User doesn't exist, create them
 				try:
-					add_ad_user(get_ou(value['organization']['admin_ou']), cn)
-					print('Added User {}'.format(cn))
-					added_users = added_users + 1
-					change_task_status(value['id'], '3')
-					print("Task {} changed to status {}".format(value['id'], '3'))
+					if not test:
+						add_ad_user(get_ou(value['organization']['admin_ou']), cn)
+						print('Added User {}'.format(cn))
+						added_users = added_users + 1
+						change_task_status(value['id'], '3')
+						print("Task {} changed to status {}".format(value['id'], '3'))
+					elif test:
+						print("Would have added user {} to ou {} with {} single attributes".format(cn, value['organization']['admin_ou'], value['attributes']['single_attributes'] ))
+						print("Would have changed task id {} to status {}".format(value['id'], '3'))
 				except:
 					change_task_status(value['id'], '4')
 					print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
