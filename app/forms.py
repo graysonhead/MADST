@@ -16,6 +16,8 @@ class PasswordChange(Form):
 class AddName(Form):
 	name = StringField('Name', validators=[DataRequired()])
 
+class AddAdminUser(Form):
+	adminname = StringField('Username', validators=[DataRequired()])
 
 class KeyValueAdd(Form):
 	key = StringField('Attribute Name', validators=[DataRequired()])
@@ -36,3 +38,10 @@ class MultiKeyValueModify(Form):
 	mod_mkey = StringField('Attribute Name', validators=[DataRequired()])
 	mod_mvalue = StringField('Value', validators=[DataRequired()])
 	mod_mdelete = BooleanField('delete', default=False)
+
+
+class UserCreationForm(Form):
+	username = StringField('Username', validators=[DataRequired()])
+	password = PasswordField('Password', validators=[DataRequired()])
+	first_name = StringField('First Name', validators=[DataRequired()])
+	last_name = StringField('Last Name', validators=[DataRequired()])

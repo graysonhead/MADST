@@ -1,9 +1,61 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
 from .decorators import required
-from .forms import LoginForm, PasswordChange, AddName, KeyValueAdd, KeyValueModify, MultiKeyValueAdd, MultiKeyValueModify
+from .forms import \
+	LoginForm, \
+	PasswordChange, \
+	AddName, \
+	KeyValueAdd, \
+	KeyValueModify, \
+	MultiKeyValueAdd, \
+	MultiKeyValueModify, \
+	UserCreationForm, \
+	AddAdminUser
 
 # from flask.ext.permissions.decorators import user_is, user_has
+
+
+def delete_user(user_id):
+	sesh = db.session()
+	try:
+		user = sesh.query(models.User).filter_by(id=user_id).first()
+		sesh.delete(user)
+		sesh.commit()
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+
+def create_user(username, first_name, last_name, password):
+	sesh = db.session()
+	try:
+		user = models.User(username, password, first_name.lower(), last_name.lower())
+		sesh.add(user)
+		sesh.commit()
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+
+
+def get_user(user_id):
+	sesh = db.session()
+	try:
+		return sesh.query(models.User).filter_by(id=user_id).first()
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
+
+
+def get_users():
+	sesh = db.session()
+	try:
+		return sesh.query(models.User).all()
+	except:
+		sesh.rollback()
+	finally:
+		sesh.close()
 
 
 def log_pageview(request):
@@ -112,6 +164,8 @@ def admin_org():
 	delete = request.args.get('delete', default=0, type=int)
 	resync = request.args.get('resync', default=0, type=int)
 	form = AddName()
+	userform = AddAdminUser()
+	# Begin POST block
 	if request.method == 'POST':
 		if form.name.data:
 			sesh = db.session()
@@ -126,7 +180,27 @@ def admin_org():
 				flash("DB write failed", 'error')
 			finally:
 				sesh.close()
+		elif userform.adminname.data:
+			sesh = db.session()
+			try:
+				org = sesh.query(models.Organization).filter_by(id=org_id).first()
+				user = sesh.query(models.User).filter_by(username=userform.adminname.data).first()
+				if not user:
+					flash("User {} not found".format(user.username))
+					return(redirect(url_for("admin_org", org_id = org_id)))
+				user.add_to_org(org)
+				sesh.add(org)
+				sesh.add(user)
+				sesh.commit()
+				flash("Added admin user {} to org {}".format(user.username, org.name))
+			except:
+				sesh.rollback()
+				flash("Failed to add user {} to org {}".format(user.username, org.name))
+			finally:
+				sesh.close()
 		return(redirect(url_for("admin_org", org_id = org_id)))
+	# End POST block
+	# Begin GET block
 	if request.method == 'GET':
 		if delete == 1:
 			sesh = db.session()
@@ -171,6 +245,7 @@ def admin_org():
 		try:
 			org = sesh.query(models.Organization).filter_by(id=org_id).first()
 			templates = org.templates
+			admin_users = org.admin_users
 		except:
 			sesh.rollback()
 		finally:
@@ -178,10 +253,13 @@ def admin_org():
 		return render_template(
 			'admin_org.html',
 			form=form,
+			userform=userform,
 			title='Organization Admin: {}'.format(org.name.title()),
 			org=org,
+			admin_users=admin_users,
 			templates=templates
 		)
+	#End GET block
 
 @required('Admin')
 @login_required
@@ -363,6 +441,76 @@ def login():
 						   title='Sign In',
 						   form=form)
 
+
+@required('Admin')
+@login_required
+@app.route("/admin/users", methods=['GET', 'POST'])
+def admin_users():
+	userform = UserCreationForm()
+	# Begin GET block
+	if request.method == 'GET':
+		users = get_users()
+		return render_template('admin_users.html',
+						userform=userform,
+						   users=users)
+	# End GET block
+	elif request.method == 'POST':
+		try:
+			create_user(userform.username.data, userform.first_name.data, userform.last_name.data, userform.password.data)
+			flash('Created user account for {} {}.'.format(userform.first_name.data, userform.last_name.data))
+		except:
+			flash('Failed to create user account for {} {}.'.format(userform.first_name.data, userform.last_name.data))
+		return redirect(url_for('admin_users'))
+
+
+
+
+@required('Admin')
+@login_required
+@app.route("/admin/user", methods=['GET', 'POST'])
+def admin_user():
+	form = AddName()
+	user_id = request.args.get('user_id', default=0, type=int)
+	delete = request.args.get('delete', default=0, type=int)
+	# Begin GET block
+	if request.method == 'GET':
+		if delete == 1:
+			delete_user(user_id)
+			return redirect(url_for('admin_users'))
+		sesh = db.session()
+		try:
+			user = sesh.query(models.User).filter_by(id=user_id).first()
+			roles = user.roles
+		except:
+			sesh.rollback()
+		finally:
+			sesh.close()
+		return render_template('admin_user.html',
+							   form=form,
+							   roles=roles,
+							   user=user)
+	# End GET block
+	# Begin POST block
+	elif request.method == 'POST':
+		rolename = form.name.data
+		sesh = db.session()
+		try:
+			user = sesh.query(models.User).filter_by(id=user_id).first()
+			role = sesh.query(models.Role).filter_by(name=rolename).first()
+			if not role:
+				role = models.Role(rolename)
+			user.add_roles(role)
+			sesh.add(user)
+			sesh.add(role)
+			sesh.commit()
+			flash('Added role {} to user {} {}'.format(role.name, user.first_name, user.last_name))
+			return redirect(url_for('admin_user', user_id=user_id))
+		except:
+			sesh.rollback()
+			flash('Failed to add role {} to user {} {}'.format(role.name, user.first_name, user.last_name))
+		finally:
+			sesh.close()
+	# End POST block
 
 @app.route("/logout")
 @login_required

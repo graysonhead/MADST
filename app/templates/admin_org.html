@@ -14,11 +14,22 @@
         {{ form.hidden_tag() }}
         <form action="" method="post" name="add">
             {{ form.name.label }} {{ form.name }}
-            <input class="btn btn-primary" type="submit" value="Add">
+            <input class="btn btn-primary" type="submit" value="Add Template">
         </form>
     </div>
     <div>
-        <h2> Client Info</h2>
+        <h2>Admin users:</h2>
+        {% for u in admin_users %}
+        <a href={{ url_for('admin_user', user_id=u.id) }}>({{ u.username }}) - {{ u.first_name.title() }} {{ u.last_name.title() }}</a><br>
+        {% endfor %}
+        {{ userform.hidden_tag() }}
+        <form action="" method="post" name="addadminuser">
+            Add Admin User (username): {{ userform.adminname }}
+            <input class="btn btn-primary" type="submit" value="Add User">
+        </form>
+    </div>
+    <div>
+        <h2>Client Info</h2>
         API Key: {{ org.apikey }} <br>
         Sync/API Password: {{ org.sync_key }}
     </div>
