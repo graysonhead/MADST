@@ -5,11 +5,16 @@ from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, p
 import re
 import time
 import argparse
+import sys
+import json
+
+try:
+	import config
+except ImportError:
+	print("Failed to import config, please ensure the example is copied to config.py.")
+	sys.exit(1)
 
 
-host = 'http://10.233.51.213:5000/'
-org_id = 3
-private_key = 'MAW9G6IHEQIANE2UD1YE4SCFIZGY6D3Y'
 updated_users = 0
 added_users = 0
 
@@ -50,7 +55,8 @@ def decrypt(string, pkey):
 	return passout.strip()
 
 def change_task_status(task_id, status_id):
-	requests.put(host + 'api/task/' + str(task_id), data={'status': status_id})
+	requests.put(config.host + 'api/task/'+str(task_id), params={'apikey': config.apikey, 'secret': config.private_key}, json={'status': status_id})
+
 
 
 if __name__ == '__main__':
@@ -59,15 +65,19 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 while True:
 	try:
-		r = requests.get(host + 'api/tasks/{}'.format(org_id))
+		params= {'apikey': config.apikey, 'secret': config.private_key, 'org_id': config.org_id}
+		r = requests.get(config.host + 'api/tasks', params=params)
+		if r.status_code == 401:
+			print("Recieved authentication error") #TODO Log this instead of writing to stdout
+			raise ConnectionRefusedError
 	except requests.exceptions.ConnectionError:
 		print("A connection error occured, check the host and port and try again.")
+	#TODO Log this instead of writing to stdout
 	for key, value in r.json().items():
 		if value['status']['id'] == 1:
 			cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 			password = value['user']['sync_password']
-			password = decrypt(password, private_key).decode('utf-8')
-
+			password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 			if check_user_exists(cn):
 				try:
 					update_password(cn, password)
@@ -78,8 +88,6 @@ while True:
 				except:
 					change_task_status(value['id'], '4')
 					print("Task {} changed to status {}".format(value['id'], '4'))
-
-
 			else:
 				# User doesn't exist, create them
 				try:
@@ -90,6 +98,7 @@ while True:
 					print("Task {} changed to status {}".format(value['id'], '3'))
 				except:
 					change_task_status(value['id'], '4')
+					print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
 					print("Task {} changed to status {}".format(value['id'], '4'))
 		else:
 			print('No new issues')
