@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect, url_for, request
-from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user
+from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
 from .decorators import required
 from .forms import \
 	LoginForm, \
@@ -108,8 +108,10 @@ def index():
 		friendly_name=friendly_name.title(),
 		user=g.user,
 		form=form,
+		version_number=version_number,
 		title='Home'
 	)
+
 
 @required('Admin')
 @login_required
@@ -144,16 +146,21 @@ def admin_orgs():
 			'admin_orgs.html',
 			title='Organization Admin',
 			form=form,
+			version_number=version_number,
 			orgs=orgs
 		)
+
+
 @required('Admin')
 @login_required
 @app.route('/admin', methods=['GET'])
 def admin():
 	return render_template(
 		'admin.html',
+		version_number=version_number,
 		title='Admin'
 	)
+
 
 @required('Admin')
 @login_required
@@ -257,9 +264,11 @@ def admin_org():
 			title='Organization Admin: {}'.format(org.name.title()),
 			org=org,
 			admin_users=admin_users,
+			version_number=version_number,
 			templates=templates
 		)
 	#End GET block
+
 
 @required('Admin')
 @login_required
@@ -401,6 +410,7 @@ def admin_org_template(**kwargs):
 			template=template,
 			new_sv_form=new_sv_form,
 			mvform=mvform,
+			version_number=version_number,
 			new_mvform=new_mvform
 		)
 
@@ -439,6 +449,7 @@ def login():
 			flash("Incorrect username")
 	return render_template('login.html',
 						   title='Sign In',
+						   version_number=version_number,
 						   form=form)
 
 
@@ -452,7 +463,8 @@ def admin_users():
 		users = get_users()
 		return render_template('admin_users.html',
 						userform=userform,
-						   users=users)
+						version_number=version_number,
+						users=users)
 	# End GET block
 	elif request.method == 'POST':
 		try:
@@ -488,6 +500,7 @@ def admin_user():
 		return render_template('admin_user.html',
 							   form=form,
 							   roles=roles,
+							   version_number=version_number,
 							   user=user)
 	# End GET block
 	# Begin POST block
