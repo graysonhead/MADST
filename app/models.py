@@ -250,7 +250,7 @@ class UserTemplate(db.Model):
 	__tablename__="user_template"
 	id = db.Column(db.Integer, primary_key=True)
 	organization = db.Column(db.Integer, db.ForeignKey('organization.id'))
-	name = db.Column(db.String(120), unique=True)
+	name = db.Column(db.String(120))
 	user_ou = db.Column(db.String(120))
 	single_attributes = relationship("SingleAttributes")
 	multi_attributes = relationship("MultiAttributes")
