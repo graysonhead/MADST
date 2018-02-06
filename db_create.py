@@ -21,10 +21,12 @@ try:
 	inprogress = models.Status(2, 'in progress')
 	completed = models.Status(3, 'completed')
 	failed = models.Status(4, 'failed')
+	failedbattr = models.Status(5, 'failed: bad attribute')
 	sesh.add(new)
 	sesh.add(inprogress)
 	sesh.add(completed)
 	sesh.add(failed)
+	sesh.add(failedbattr)
 	sesh.commit()
 except:
 	sesh.rollback()

@@ -1,0 +1,23 @@
+<!-- Extends base layout -->
+{%extends "base.html" %}
+{% block content %}
+<main role="main">
+    <div class="jumbotron">
+            <p><h1>User Admin: {{ user.username }} - {{ user.first_name.title() }} {{ user.last_name.title() }}</h1></p>
+    </div>
+    <div><h2>User Roles:</h2>
+        {% for r in roles %}
+        {{ r.name.title() }}<br>
+        {% endfor %}
+        {{ form.hidden_tag() }}
+        <form action="" method="post" name="add">
+            Add Role: {{ form.name }}
+            <input class="btn btn-primary" type="submit" value="Add">
+    <div>
+        <h2>Admin Actions</h2>
+        <button class="btn btn-default" data-toggle="confirmation">Confirmation</button>
+        <input class="btn btn-success" value="Resync This User" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, resync=1) }}';">
+        <input class="btn btn-danger" data-toggle="confirmation" value="Delete" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, delete=1) }}';">
+    </div>
+</main>
+{% endblock %}
