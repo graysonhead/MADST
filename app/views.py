@@ -228,7 +228,7 @@ def admin_org_template(sesh, **kwargs):
 	mvform = MultiKeyValueModify()
 	new_mvform = MultiKeyValueAdd()
 	ouform = OUName()
-
+    # Begin POST block
 	if request.method == 'POST':
 		template_id = request.args.get('template_id', default=1, type=int)
 		""" Single Value Logic """
@@ -279,6 +279,8 @@ def admin_org_template(sesh, **kwargs):
 			flash("OU DN changed")
 		# After we are done submitting values, redirect to the page we submitted from
 		return (redirect(url_for('admin_org_template', template_id=template_id)))
+	# End POST block
+	# Begin GET block
 	if request.method == 'GET':
 		if delete == 1:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()

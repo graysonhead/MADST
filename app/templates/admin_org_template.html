@@ -69,6 +69,14 @@
                 {{ new_mvform.mkey }} {{ new_mvform.mvalue }} <input class="btn btn-primary" type="submit" value="Add">
                 </form>
             </div>
+            <div>
+                <h3>
+                    Assigned Roles:
+                </h3>
+                {% for r in template.roles %}
+                    {{ r.name }}
+                {% endfor %}
+            </div>
         </div>
     </div>
 

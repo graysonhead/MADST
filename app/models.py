@@ -44,6 +44,15 @@ status_map = db.Table('status_map',
 					  )
 )
 
+role_template_map = db.Table('role_template_map',
+					 db.Column(
+						'role_id', db.Integer, db.ForeignKey('role.id')
+					 ),
+					 db.Column(
+						 'usertemplate_id', db.Integer, db.ForeignKey('user_template.id')
+					 )
+)
+
 
 
 class Role(db.Model):
@@ -53,6 +62,11 @@ class Role(db.Model):
 	users = relationship(
 		"User",
 		secondary=role_table,
+		back_populates="roles"
+	)
+	usertemplates = relationship(
+		"UserTemplate",
+		secondary=role_template_map,
 		back_populates="roles"
 	)
 
@@ -254,6 +268,11 @@ class UserTemplate(db.Model):
 	user_ou = db.Column(db.String(120))
 	single_attributes = relationship("SingleAttributes")
 	multi_attributes = relationship("MultiAttributes")
+	roles = relationship(
+		"Role",
+		secondary=role_template_map,
+		back_populates="usertemplates"
+	)
 
 	def __init__(self, name):
 		self.name = name
@@ -269,6 +288,9 @@ class UserTemplate(db.Model):
 
 	def add_multi_attribute(self, key, value):
 		self.multi_attributes.append(MultiAttributes(key, value))
+
+	def add_role(self, role):
+		self.roles.append(role)
 
 #
 class SingleAttributes(db.Model):
