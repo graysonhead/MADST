@@ -53,6 +53,19 @@ def api_key_required():
 		return inner
 	return wrapper
 
+def with_db_session(func):
+	@wraps(func)
+	def inner(*args, **kwargs):
+		sesh = db.session()
+		try:
+			return func(sesh, *args, **kwargs)
+		except:
+			sesh.rollback()
+			raise
+		finally:
+			sesh.close()
+	return inner
+
 # def dbcontext(func):
 # 	def inner(*args, **kwargs):
 # 		session = db.Session()

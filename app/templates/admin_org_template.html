@@ -24,6 +24,11 @@
     <div class="col-8">
         <h2>Template Attributes</h2>
         <div>
+            <form action="" method="post" name="changeuserou">
+            Organizational Unit DN: {{ ouform.ouname }} <input class="btn btn-primary" type="submit" value="Change">
+            </form>
+        </div>
+        <div>
             <h3>Single Var Attributes:</h3>
                 {% for sv in single_attributes %}
                     {% if sv.id == selected_single_attribute %}

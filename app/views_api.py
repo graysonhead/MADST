@@ -1,7 +1,7 @@
 from flask import request
 from flask import jsonify
 from app import db, models, crypt, app
-from .decorators import api_key_required
+from .decorators import api_key_required, with_db_session
 import re
 
 
@@ -18,83 +18,21 @@ def org_not_exist():
 def bad_request_data(data):
 	return jsonify({"Error": "Bad request data", "RequestData": data}), 406
 
-def get_billable_users(org_id):
-	sesh = db.session()
+def get_billable_users(sesh, org_id):
 	org = sesh.query(models.Organization).filter_by(id=org_id).first()
 	return org.billable_users
 
 
-def tasks_fetch(org_id=False):
-	sesh = db.session()
-	try:
-		tasks = {}
-		if org_id:
-			db_tasks = sesh.query(models.Task).filter_by(organization_id=org_id).all()
-		else:
-			db_tasks = sesh.query(models.Task).all()
-		for i, val in enumerate(db_tasks):
-			task_item = {
-				'id': val.id,
-				'type': 'create',
-				'status': {
-					'id': val.status.id,
-					'name': val.status.name
-				},
-				'organization': {
-					'id': val.organization_id,
-					'name': val.organization.name,
-					'admin_ou': val.organization.admin_ou
-				},
-				'user': {
-					'first_name': val.user.first_name.title(),
-					'last_name': val.user.last_name.title(),
-					'sync_username': val.user.sync_username,
-					'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
-				},
-				'attributes': {
-					'single_attributes': {},
-					'multi_attributes': {}
-				}
-			}
-			try:
-				if val.organization.templates[0].single_attributes[0]:
-					for s in val.organization.templates[0].single_attributes:
-						task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username,
-																								val.user.first_name,
-																								val.user.last_name,
-																								s.value)})
-			except IndexError:
-				pass
-			try:
-				if val.organization.templates[0].multi_attributes[0]:
-					for s in val.organization.templates[0].multi_attributes:
-						if s.key in task_item['attributes']['multi_attributes']:
-							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
-																							   val.user.first_name,
-																							   val.user.last_name,
-																							   s.value))
-						else:
-							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
-																						val.user.first_name,
-																						val.user.last_name,
-																						s.value))]
-			except IndexError:
-				pass
-			tasks.update({str(i): task_item})
-		return tasks
-	except:
-		sesh.rollback()
-		raise
-	finally:
-		sesh.close()
-
-
-def task_fetch(task_id):
-	sesh = db.session
-	try:
-		val = sesh.query(models.Task).filter_by(id=task_id).first()
+def tasks_fetch(sesh, org_id=False):
+	tasks = {}
+	if org_id:
+		db_tasks = sesh.query(models.Task).filter_by(organization_id=org_id).all()
+	else:
+		db_tasks = sesh.query(models.Task).all()
+	for i, val in enumerate(db_tasks):
 		task_item = {
 			'id': val.id,
+			'type': 'create',
 			'status': {
 				'id': val.status.id,
 				'name': val.status.name
@@ -110,46 +48,95 @@ def task_fetch(task_id):
 				'sync_username': val.user.sync_username,
 				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
 			},
-		'attributes': {
-			'single_attributes': {},
-			'multi_attributes': {}
+			'attributes': {
+				'single_attributes': {},
+				'multi_attributes': {}
 			}
 		}
 		try:
 			if val.organization.templates[0].single_attributes[0]:
 				for s in val.organization.templates[0].single_attributes:
-					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username,
+																							val.user.first_name,
+																							val.user.last_name,
+																							s.value)})
 		except IndexError:
 			pass
 		try:
 			if val.organization.templates[0].multi_attributes[0]:
-					for s in val.organization.templates[0].multi_attributes:
-						if s.key in task_item['attributes']['multi_attributes']:
-							task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
-																							   val.user.first_name,
-																							   val.user.last_name,
-																							   s.value))
-						else:
-							task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
-																						val.user.first_name,
-																						val.user.last_name,
-																						s.value))]
+				for s in val.organization.templates[0].multi_attributes:
+					if s.key in task_item['attributes']['multi_attributes']:
+						task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
+																						   val.user.first_name,
+																						   val.user.last_name,
+																						   s.value))
+					else:
+						task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																					val.user.first_name,
+																					val.user.last_name,
+																					s.value))]
 		except IndexError:
 			pass
-	except:
-		sesh.rollback()
-		raise
-	finally:
-		sesh.close()
+		tasks.update({str(i): task_item})
+	return tasks
+
+
+
+def task_fetch(sesh, task_id):
+	val = sesh.query(models.Task).filter_by(id=task_id).first()
+	task_item = {
+		'id': val.id,
+		'status': {
+			'id': val.status.id,
+			'name': val.status.name
+		},
+		'organization': {
+			'id': val.organization_id,
+			'name': val.organization.name,
+			'admin_ou': val.organization.admin_ou
+		},
+		'user': {
+			'first_name': val.user.first_name.title(),
+			'last_name': val.user.last_name.title(),
+			'sync_username': val.user.sync_username,
+			'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
+		},
+	'attributes': {
+		'single_attributes': {},
+		'multi_attributes': {}
+		}
+	}
+	try:
+		if val.organization.templates[0].single_attributes[0]:
+			for s in val.organization.templates[0].single_attributes:
+				task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
+	except IndexError:
+		pass
+	try:
+		if val.organization.templates[0].multi_attributes[0]:
+				for s in val.organization.templates[0].multi_attributes:
+					if s.key in task_item['attributes']['multi_attributes']:
+						task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
+																						   val.user.first_name,
+																						   val.user.last_name,
+																						   s.value))
+					else:
+						task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
+																					val.user.first_name,
+																					val.user.last_name,
+																					s.value))]
+	except IndexError:
+		pass
 	return task_item
 
 
 @app.route('/api/task/<task_id>', methods=['GET', 'PUT', 'POST'])
 @api_key_required()
-def api_task(task_id):
+@with_db_session
+def api_task(sesh, task_id):
 	# Begin GET block
 	if request.method == 'GET':
-		return jsonify(task_fetch(task_id))
+		return jsonify(task_fetch(sesh, task_id))
 	# End GET block
 	# Begin PUT block
 	elif request.method == 'PUT':
@@ -160,31 +147,26 @@ def api_task(task_id):
 			return bad_request_data(data)
 		except KeyError:
 			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
-		sesh = db.session()
+
+		taskdb = sesh.query(models.Task).filter_by(id=task_id).first()
 		try:
-			taskdb = sesh.query(models.Task).filter_by(id=task_id).first()
-			try:
-				taskdb.change_status(status_id)
-			except:
-				return jsonify({"Error": "No status code {} exists".format(status_id)}), 404
-			sesh.add(taskdb)
-			sesh.commit()
+			taskdb.change_status(status_id)
 		except:
-			sesh.rollback()
-			return jsonify({"Error": "There is no task with id{}".format(task_id)}), 404
-		finally:
-			sesh.close()
+			return jsonify({"Error": "No status code {} exists".format(status_id)}), 404
+		sesh.add(taskdb)
+		sesh.commit()
 		return jsonify(task_fetch(task_id)), 201
 	# End PUT block
 
 @app.route('/api/tasks', methods=['GET'])
 @api_key_required()
-def get_tasks(org_id=False):
+@with_db_session
+def get_tasks(sesh, org_id=False):
 	org_id = request.args.get('org_id', default='', type=int)
 	# Begin GET block
 	if request.method == 'GET':
 		if org_id:
-			tasks = tasks_fetch(org_id)
+			tasks = tasks_fetch(sesh, org_id)
 			if tasks:
 				return jsonify(tasks)
 			else:
@@ -195,12 +177,13 @@ def get_tasks(org_id=False):
 
 @app.route('/api/org/users/count', methods=['GET', 'PUT'])
 @api_key_required()
-def api_org_usercount():
+@with_db_session
+def api_org_usercount(sesh):
 	# Begin GET block
 	org_id = request.args.get('org_id', default=0, type=int)
 	if request.method == 'GET':
 		try:
-			billable_users = get_billable_users(org_id)
+			billable_users = get_billable_users(sesh, org_id)
 		except:
 			return jsonify({"Error": "An internal server error occured"}), 500
 		if billable_users:
@@ -217,20 +200,14 @@ def api_org_usercount():
 			return bad_request_data(data)
 		except KeyError:
 			return jsonify({"Error": "A non-optional key is missing, please check the documentation and try again", "RequestData": data}), 406
-		try:
-			sesh = db.session()
-			org = sesh.query(models.Organization).filter_by(id=org_id).first()
-			if org is None:
-				return org_not_exist()
-			org.billable_users = billable_users
-			sesh.add(org)
-			sesh.commit()
-			return jsonify({"Billable_Users": get_billable_users(org_id)})
-		except:
-			sesh.rollback()
-			raise
-		finally:
-			sesh.close()
+		org = sesh.query(models.Organization).filter_by(id=org_id).first()
+		if org is None:
+			return org_not_exist()
+		org.billable_users = billable_users
+		sesh.add(org)
+		sesh.commit()
+		return jsonify({"Billable_Users": get_billable_users(sesh, org_id)})
+
 	#end PUT block
 
 
