@@ -7,7 +7,7 @@
     </div>
     <div><h2>User Roles:</h2>
         {% for r in roles %}
-        {{ r.name.title() }}<br>
+        {{ r.name }}<br>
         {% endfor %}
         {{ form.hidden_tag() }}
         <form action="" method="post" name="add">

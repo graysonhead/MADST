@@ -45,3 +45,6 @@ class UserCreationForm(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
 	first_name = StringField('First Name', validators=[DataRequired()])
 	last_name = StringField('Last Name', validators=[DataRequired()])
+
+class OUName(Form):
+	ouname = StringField('Username', validators=[DataRequired()])
