@@ -169,7 +169,6 @@ def api_org_usercount(sesh):
 		sesh.add(org)
 		sesh.commit()
 		return jsonify({"Billable_Users": get_billable_users(sesh, org_id)})
-
 	#end PUT block
 
 
