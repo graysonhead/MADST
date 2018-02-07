@@ -5,6 +5,57 @@ from .decorators import api_key_required, with_db_session
 import re
 
 
+def parse_task_item(task):
+	task_item = {
+		'id': task.id,
+		'type': 'create',
+		'status': {
+			'id': task.status.id,
+			'name': task.status.name
+		},
+		'organization': {
+			'id': task.organization_id,
+			'name': task.organization.name,
+			'admin_ou': task.organization.admin_ou
+		},
+		'user': {
+			'first_name': task.user.first_name.title(),
+			'last_name': task.user.last_name.title(),
+			'sync_username': task.user.sync_username,
+			'sync_password': crypt.encrypt(task.user.sync_password, task.organization.sync_key).decode('utf-8')
+		},
+		'attributes': {
+			'single_attributes': {},
+			'multi_attributes': {}
+		}
+	}
+	try:
+		if task.organization.templates[0].single_attributes[0]:
+			for s in task.organization.templates[0].single_attributes:
+				task_item['attributes']['single_attributes'].update({s.key: atrib_regex(task.user.sync_username,
+																						task.user.first_name,
+																						task.user.last_name,
+																						s.value)})
+	except IndexError:
+		pass
+	try:
+		if task.organization.templates[0].multi_attributes[0]:
+			for s in task.organization.templates[0].multi_attributes:
+				if s.key in task_item['attributes']['multi_attributes']:
+					task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(task.user.sync_username,
+																						  task.user.first_name,
+																						  task.user.last_name,
+																						  s.value))
+				else:
+					task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(task.user.sync_username,
+																					   task.user.first_name,
+																					   task.user.last_name,
+																					   s.value))]
+	except IndexError:
+		pass
+	return task_item
+
+
 def atrib_regex(username, firstname, lastname, string):
 	''' Perform string replacement on Attribute values '''
 	string = re.sub(r"%userName%", username, string)
@@ -30,53 +81,7 @@ def tasks_fetch(sesh, org_id=False):
 	else:
 		db_tasks = sesh.query(models.Task).all()
 	for i, val in enumerate(db_tasks):
-		task_item = {
-			'id': val.id,
-			'type': 'create',
-			'status': {
-				'id': val.status.id,
-				'name': val.status.name
-			},
-			'organization': {
-				'id': val.organization_id,
-				'name': val.organization.name,
-				'admin_ou': val.organization.admin_ou
-			},
-			'user': {
-				'first_name': val.user.first_name.title(),
-				'last_name': val.user.last_name.title(),
-				'sync_username': val.user.sync_username,
-				'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
-			},
-			'attributes': {
-				'single_attributes': {},
-				'multi_attributes': {}
-			}
-		}
-		try:
-			if val.organization.templates[0].single_attributes[0]:
-				for s in val.organization.templates[0].single_attributes:
-					task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username,
-																							val.user.first_name,
-																							val.user.last_name,
-																							s.value)})
-		except IndexError:
-			pass
-		try:
-			if val.organization.templates[0].multi_attributes[0]:
-				for s in val.organization.templates[0].multi_attributes:
-					if s.key in task_item['attributes']['multi_attributes']:
-						task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
-																						   val.user.first_name,
-																						   val.user.last_name,
-																						   s.value))
-					else:
-						task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
-																					val.user.first_name,
-																					val.user.last_name,
-																					s.value))]
-		except IndexError:
-			pass
+		task_item  = parse_task_item(val)
 		tasks.update({str(i): task_item})
 	return tasks
 
@@ -84,50 +89,7 @@ def tasks_fetch(sesh, org_id=False):
 
 def task_fetch(sesh, task_id):
 	val = sesh.query(models.Task).filter_by(id=task_id).first()
-	task_item = {
-		'id': val.id,
-		'status': {
-			'id': val.status.id,
-			'name': val.status.name
-		},
-		'organization': {
-			'id': val.organization_id,
-			'name': val.organization.name,
-			'admin_ou': val.organization.admin_ou
-		},
-		'user': {
-			'first_name': val.user.first_name.title(),
-			'last_name': val.user.last_name.title(),
-			'sync_username': val.user.sync_username,
-			'sync_password': crypt.encrypt(val.user.sync_password, val.organization.sync_key).decode('utf-8')
-		},
-	'attributes': {
-		'single_attributes': {},
-		'multi_attributes': {}
-		}
-	}
-	try:
-		if val.organization.templates[0].single_attributes[0]:
-			for s in val.organization.templates[0].single_attributes:
-				task_item['attributes']['single_attributes'].update({s.key: atrib_regex(val.user.sync_username, val.user.first_name, val.user.last_name, s.value)})
-	except IndexError:
-		pass
-	try:
-		if val.organization.templates[0].multi_attributes[0]:
-				for s in val.organization.templates[0].multi_attributes:
-					if s.key in task_item['attributes']['multi_attributes']:
-						task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(val.user.sync_username,
-																						   val.user.first_name,
-																						   val.user.last_name,
-																						   s.value))
-					else:
-						task_item['attributes']['multi_attributes'][s.key] = [(atrib_regex(val.user.sync_username,
-																					val.user.first_name,
-																					val.user.last_name,
-																					s.value))]
-	except IndexError:
-		pass
-	return task_item
+	return parse_task_item(val)
 
 
 @app.route('/api/task/<task_id>', methods=['GET', 'PUT', 'POST'])
@@ -155,7 +117,7 @@ def api_task(sesh, task_id):
 			return jsonify({"Error": "No status code {} exists".format(status_id)}), 404
 		sesh.add(taskdb)
 		sesh.commit()
-		return jsonify(task_fetch(task_id)), 201
+		return jsonify(task_fetch(sesh, task_id)), 201
 	# End PUT block
 
 @app.route('/api/tasks', methods=['GET'])
@@ -172,7 +134,7 @@ def get_tasks(sesh, org_id=False):
 			else:
 				return org_not_exist()
 		else:
-			return jsonify(tasks_fetch())
+			return jsonify(tasks_fetch(sesh))
 	# End GET block
 
 @app.route('/api/org/users/count', methods=['GET', 'PUT'])
