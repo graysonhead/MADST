@@ -10,6 +10,7 @@
 
     <!-- Custom style for this template -->
     <link href="/static/css/navbar-top-fixed.css" rel="stylesheet">
+    <link href="/static/css/tether.css" rel="stylesheet">
 </head>
 <body>
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
@@ -35,6 +36,11 @@
         </form>
       </div>
     </nav>
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/popper.js"></script>
+    <script src="/static/js/tether.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+    <script src="/static/js/bootstrap-confirmation.js"></script>
     {% with messages = get_flashed_messages() %}
 	    {% if messages %}
 	        {% for message in messages %}
