@@ -282,7 +282,7 @@ def admin_org_template(sesh, **kwargs):
 			sesh.add(template)
 			sesh.commit()
 			flash("OU DN changed")
-		elif roleform.rolename.data is not 'None':
+		elif not roleform.rolename.data == roleform.rolename.default:
 			role = sesh.query(models.Role).filter_by(id=roleform.rolename.data).first()
 			template.add_role(role)
 			sesh.add(role)

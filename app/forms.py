@@ -52,6 +52,5 @@ class OUName(Form):
 # ('Option1', 'Option1'),('Option2', 'Option2')
 
 class AddRole(Form):
-
-	rolename = SelectField('Role Name', validators=[DataRequired()])
+	rolename = SelectField('Role Name', coerce=int, validators=[DataRequired()])
 
