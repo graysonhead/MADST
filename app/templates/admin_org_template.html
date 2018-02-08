@@ -76,6 +76,10 @@
                 {% for r in template.roles %}
                     {{ r.name }}
                 {% endfor %}
+                <form action="" method="post" name="Inputs">
+                {{ form.hidden_tag() }}
+                {{ roleform.rolename() }} <input class="btn btn-primary" type="submit" value="Add">
+                </form>
             </div>
         </div>
     </div>

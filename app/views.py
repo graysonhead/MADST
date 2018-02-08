@@ -11,10 +11,13 @@ from .forms import \
 	MultiKeyValueModify, \
 	UserCreationForm, \
 	AddAdminUser, \
-	OUName
+	OUName, \
+	AddRole
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
+def get_template(session, id):
+	return session.query(models.UserTemplate).filter_by(id=id).first()
 
 def delete_user(user_id):
 	sesh = db.session()
@@ -69,8 +72,8 @@ def before_request():
 	g.user = current_user
 
 @app.route('/index', methods=['GET', 'POST'])
-@required('technician')
 @login_required
+@required('technician')
 @with_db_session
 def index(sesh):
 	form = PasswordChange()
@@ -91,7 +94,6 @@ def index(sesh):
 	else:
 		friendly_name = g.user.username
 	# Build task list
-
 	return render_template(
 		'home.html',
 		friendly_name=friendly_name.title(),
@@ -228,9 +230,12 @@ def admin_org_template(sesh, **kwargs):
 	mvform = MultiKeyValueModify()
 	new_mvform = MultiKeyValueAdd()
 	ouform = OUName()
+	roleform = AddRole()
     # Begin POST block
 	if request.method == 'POST':
 		template_id = request.args.get('template_id', default=1, type=int)
+		""" Stuff Every request needs """
+		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 		""" Single Value Logic """
 		if svform.mod_key.data or svform.mod_delete.data == True:
 			if selected_single_attribute:
@@ -265,23 +270,35 @@ def admin_org_template(sesh, **kwargs):
 					sesh.add(multi_atrib)
 					sesh.commit()
 					flash("Attribute Editied")
-		if new_mvform.mkey.data:
+		elif new_mvform.mkey.data:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			template.add_multi_attribute(new_mvform.mkey.data, new_mvform.mvalue.data)
 			sesh.add(template)
 			sesh.commit()
 			flash("Attribute Added")
-		if ouform.ouname.data:
+		elif ouform.ouname.data:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			template.user_ou = ouform.ouname.data
 			sesh.add(template)
 			sesh.commit()
 			flash("OU DN changed")
+		elif roleform.rolename.data is not 'None':
+			role = sesh.query(models.Role).filter_by(id=roleform.rolename.data).first()
+			template.add_role(role)
+			sesh.add(role)
+			sesh.commit()
+			flash("Added role {} to template {}.".format(role.name, template.name))
 		# After we are done submitting values, redirect to the page we submitted from
 		return (redirect(url_for('admin_org_template', template_id=template_id)))
 	# End POST block
 	# Begin GET block
 	if request.method == 'GET':
+		# Logic to populate Roles drop down
+		roles = sesh.query(models.Role).all()
+		choices = [(0, "Select Template")]
+		for r in roles:
+			choices.append((r.id, r.name))
+			roleform.rolename.choices = choices
 		if delete == 1:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			orgid = template.organization
@@ -325,7 +342,8 @@ def admin_org_template(sesh, **kwargs):
 			mvform=mvform,
 			version_number=version_number,
 			new_mvform=new_mvform,
-			ouform=ouform
+			ouform=ouform,
+			roleform=roleform
 		)
 
 
@@ -384,8 +402,8 @@ def admin_users(sesh):
 
 
 @app.route("/admin/user", methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_user(sesh):
 	form = AddName()
