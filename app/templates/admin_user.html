@@ -7,12 +7,17 @@
     </div>
     <div><h2>User Roles:</h2>
         {% for r in roles %}
-        {{ r.name }}<br>
-        {% endfor %}
+        <form method="post" action="user?user_id={{ user.id }}" class="inline">
         {{ form.hidden_tag() }}
-        <form action="" method="post" name="add">
-            Add Role: {{ form.name }}
-            <input class="btn btn-primary" type="submit" value="Add">
+            {{ r.name }} <button type="submit" name="remove_role" value="{{ r.id }}" class="btn btn-xs btn-danger">Remove</button>
+        </form>
+        <br>
+        {% endfor %}
+
+        <form action="" method="post" name="Inputs">
+        {{ form.hidden_tag() }}
+        {{ roleform.rolename() }} <input class="btn btn-primary" type="submit" value="Add">
+        </form>
     <div>
         <h2>Admin Actions</h2>
         <button class="btn btn-default" data-toggle="confirmation">Confirmation</button>

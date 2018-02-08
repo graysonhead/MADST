@@ -16,6 +16,13 @@ from .forms import \
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
+def get_current_role_ids(session, template_id):
+	template = session.query(models.UserTemplate).filter_by(id=template_id).first()
+	roleids = []
+	for r in template.roles:
+		roleids.append(r.id)
+	return roleids
+
 def get_template(session, id):
 	return session.query(models.UserTemplate).filter_by(id=id).first()
 
@@ -30,6 +37,8 @@ def delete_user(user_id):
 	finally:
 		sesh.close()
 
+def get_role(session, id):
+	return session.query(models.Role).filter_by(id=id).first()
 
 def create_user(username, first_name, last_name, password, session):
 	user = models.User(username, password, first_name.lower(), last_name.lower())
@@ -237,7 +246,13 @@ def admin_org_template(sesh, **kwargs):
 		""" Stuff Every request needs """
 		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 		""" Single Value Logic """
-		if svform.mod_key.data or svform.mod_delete.data == True:
+		if request.form.getlist('remove_role'):
+				role_id = request.form['remove_role']
+				role = get_role(sesh, role_id)
+				template.roles.remove(role)
+				sesh.commit()
+				flash("Removed role {}".format(role.name))
+		elif svform.mod_key.data or svform.mod_delete.data == True:
 			if selected_single_attribute:
 				single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
 				if svform.mod_delete.data == True:
@@ -293,11 +308,13 @@ def admin_org_template(sesh, **kwargs):
 	# End POST block
 	# Begin GET block
 	if request.method == 'GET':
-		# Logic to populate Roles drop down
+		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
+			# Logic to populate Roles drop down
 		roles = sesh.query(models.Role).all()
 		choices = [(0, "Select Template")]
 		for r in roles:
-			choices.append((r.id, r.name))
+			if r.id not in get_current_role_ids(sesh, template_id):
+				choices.append((r.id, r.name))
 			roleform.rolename.choices = choices
 		if delete == 1:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
@@ -407,10 +424,39 @@ def admin_users(sesh):
 @with_db_session
 def admin_user(sesh):
 	form = AddName()
+	roleform = AddRole()
 	user_id = request.args.get('user_id', default=0, type=int)
 	delete = request.args.get('delete', default=0, type=int)
+
+	user = sesh.query(models.User).filter_by(id=user_id).first()
+	# Begin POST block
+	if request.method == 'POST':
+		if not roleform.rolename.data == roleform.rolename.default:
+			role = sesh.query(models.Role).filter_by(id=roleform.rolename.data).first()
+			user.add_role(role)
+			sesh.add(role)
+			sesh.add(user)
+			sesh.commit()
+			flash("Role {} added to user {}".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+		elif request.form.getlist('remove_role'):
+			role_id = request.form['remove_role']
+			role = get_role(sesh, role_id)
+			user.roles.remove(role)
+			sesh.add(user)
+			sesh.commit()
+			flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+		return redirect(url_for('admin_user', user_id=user_id))
+	# End POST block
 	# Begin GET block
-	if request.method == 'GET':
+
+	elif request.method == 'GET':
+		# Build role selector
+		roles = sesh.query(models.Role).all()
+		choices = [(0, "Select Template")]
+		for r in roles:
+			if r not in user.roles:
+				choices.append((r.id, r.name))
+				roleform.rolename.choices = choices
 		if delete == 1:
 			delete_user(user_id)
 			return redirect(url_for('admin_users'))
@@ -419,23 +465,11 @@ def admin_user(sesh):
 		return render_template('admin_user.html',
 							   form=form,
 							   roles=roles,
+							   roleform=roleform,
 							   version_number=version_number,
 							   user=user)
 	# End GET block
-	# Begin POST block
-	elif request.method == 'POST':
-		rolename = form.name.data
-		user = sesh.query(models.User).filter_by(id=user_id).first()
-		role = sesh.query(models.Role).filter_by(name=rolename).first()
-		if not role:
-			role = models.Role(rolename)
-		user.add_roles(role)
-		sesh.add(user)
-		sesh.add(role)
-		sesh.commit()
-		flash('Added role {} to user {} {}'.format(role.name, user.first_name, user.last_name))
-		return redirect(url_for('admin_user', user_id=user_id))
-	# End POST block
+
 
 @app.route("/logout")
 @login_required

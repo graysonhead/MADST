@@ -74,7 +74,9 @@
                     Assigned Roles:
                 </h3>
                 {% for r in template.roles %}
-                    {{ r.name }}
+                <form method="post" action="template?template_id={{ template.id }}" class="inline">
+                {{ r.name }} <button type="submit" name="remove_role" value="{{ r.id }}" class="btn btn-xs btn-danger">Remove</button>
+                </form><br>
                 {% endfor %}
                 <form action="" method="post" name="Inputs">
                 {{ form.hidden_tag() }}

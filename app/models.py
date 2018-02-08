@@ -143,6 +143,9 @@ class User(db.Model):
 	def add_roles(self, *roles):
 		self.roles.extend([role for role in roles if role not in self.roles])
 
+	def add_role(self, role):
+		self.roles.append(role)
+
 	def check_role(self, role):
 		if type(role) is str:
 			rolelist = []
