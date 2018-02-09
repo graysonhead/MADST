@@ -9,7 +9,7 @@
         {% for r in roles %}
         <form method="post" action="user?user_id={{ user.id }}" class="inline">
         {{ form.hidden_tag() }}
-            {{ r.name }} <button type="submit" name="remove_role" value="{{ r.id }}" class="btn btn-xs btn-danger">Remove</button>
+            {{ r.name }} <button type="submit" name="remove_role" value="{{ r.id }}" class="btn btn-danger btn-xs">Remove</button>
         </form>
         <br>
         {% endfor %}

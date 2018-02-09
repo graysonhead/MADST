@@ -54,3 +54,6 @@ class OUName(Form):
 class AddRole(Form):
 	rolename = SelectField('Role Name', coerce=int, validators=[DataRequired()])
 
+class NewRole(Form):
+	newrole = StringField('Role Name', validators=[DataRequired()])
+

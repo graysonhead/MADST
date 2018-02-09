@@ -12,7 +12,8 @@ from .forms import \
 	UserCreationForm, \
 	AddAdminUser, \
 	OUName, \
-	AddRole
+	AddRole, \
+	NewRole
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -251,7 +252,7 @@ def admin_org_template(sesh, **kwargs):
 				role = get_role(sesh, role_id)
 				template.roles.remove(role)
 				sesh.commit()
-				flash("Removed role {}".format(role.name))
+				flash("Removed role {} from template {}".format(role.name, template.name))
 		elif svform.mod_key.data or svform.mod_delete.data == True:
 			if selected_single_attribute:
 				single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
@@ -470,6 +471,38 @@ def admin_user(sesh):
 							   user=user)
 	# End GET block
 
+
+@app.route("/admin/roles", methods=['GET', 'POST'])
+@login_required
+@required('admin')
+@with_db_session
+def admin_roles(sesh):
+	""" Forms """
+	newrole = NewRole()
+	roles = sesh.query(models.Role).all()
+	# Begin POST block
+	if request.method == 'POST':
+		if request.form.getlist('delete_role'):
+			role_id = request.form['delete_role']
+			role = get_role(sesh, role_id)
+			sesh.delete(role)
+			sesh.commit()
+			flash("Deleted role {}".format(role.name))
+		elif newrole.newrole.data:
+			role = models.Role(newrole.newrole.data)
+			sesh.add(role)
+			sesh.commit()
+			flash("Added role {}".format(role.name))
+		return redirect(url_for('admin_roles'))
+	# End POST block
+	# Begin GET block
+	if request.method == 'GET':
+		roles = sesh.query(models.Role).all()
+		return render_template('admin_roles.html',
+							   roles=roles,
+							   newrole=newrole,
+							   version_number=version_number)
+	#End GET block
 
 @app.route("/logout")
 @login_required
