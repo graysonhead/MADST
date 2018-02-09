@@ -81,6 +81,30 @@ def load_user(username):
 def before_request():
 	g.user = current_user
 
+@app.route('/admin/orgs', methods=['GET', 'POST'])
+@login_required
+@required('admin')
+@with_db_session
+def admin_orgs(sesh):
+	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
+	form = AddName()
+	if request.method == 'POST':
+		name = form.name.data
+		org = models.Organization(name)
+		sesh.add(org)
+		sesh.commit()
+		flash('Added new organization {}.'.format(name))
+		return (redirect(url_for('admin_orgs')))
+	if request.method == 'GET':
+		orgs = sesh.query(models.Organization).all()
+		return render_template(
+			'admin_orgs.html',
+			title='Organization Admin',
+			form=form,
+			version_number=version_number,
+			orgs=orgs
+		)
+
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 @required('technician')
@@ -113,33 +137,9 @@ def index(sesh):
 		title='Home'
 	)
 
-@app.route('/admin/orgs', methods=['GET', 'POST'])
-@required('admin')
-@login_required
-@with_db_session
-def admin_orgs(sesh):
-	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
-	form = AddName()
-	if request.method == 'POST':
-		name = form.name.data
-		org = models.Organization(name)
-		sesh.add(org)
-		sesh.commit()
-		flash('Added new organization {}.'.format(name))
-		return (redirect(url_for('admin_orgs')))
-	if request.method == 'GET':
-		orgs = sesh.query(models.Organization).all()
-		return render_template(
-			'admin_orgs.html',
-			title='Organization Admin',
-			form=form,
-			version_number=version_number,
-			orgs=orgs
-		)
-
 @app.route('/admin', methods=['GET'])
-@required('admin')
 @login_required
+@required('admin')
 def admin():
 	return render_template(
 		'admin.html',
@@ -148,8 +148,8 @@ def admin():
 	)
 
 @app.route('/admin/org', methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_org(sesh):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -224,8 +224,8 @@ def admin_org(sesh):
 	#End GET block
 
 @app.route('/admin/org/template', methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_org_template(sesh, **kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -396,8 +396,8 @@ def login():
 
 
 @app.route("/admin/users", methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_users(sesh):
 	userform = UserCreationForm()
