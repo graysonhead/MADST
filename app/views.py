@@ -388,7 +388,6 @@ def login():
 				flash("Incorrect password")
 		else:
 			app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
-			flash("Incorrect username")
 	return render_template('login.html',
 						   title='Sign In',
 						   version_number=version_number,
@@ -457,7 +456,7 @@ def admin_user(sesh):
 		for r in roles:
 			if r not in user.roles:
 				choices.append((r.id, r.name))
-				roleform.rolename.choices = choices
+		roleform.rolename.choices = choices
 		if delete == 1:
 			delete_user(user_id)
 			return redirect(url_for('admin_users'))
