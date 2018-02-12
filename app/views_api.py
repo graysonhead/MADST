@@ -14,15 +14,15 @@ def parse_task_item(task):
 			'name': task.status.name
 		},
 		'organization': {
-			'id': task.organization_id,
-			'name': task.organization.name,
-			'admin_ou': task.organization.admin_ou
+			'id': task.template.organization_id,
+			'name': task.template.organization.name,
+			'admin_ou': task.template.organization.admin_ou
 		},
 		'user': {
 			'first_name': task.user.first_name.title(),
 			'last_name': task.user.last_name.title(),
 			'sync_username': task.user.sync_username,
-			'sync_password': crypt.encrypt(task.user.sync_password, task.organization.sync_key).decode('utf-8')
+			'sync_password': crypt.encrypt(task.user.sync_password, task.template.organization.sync_key).decode('utf-8')
 		},
 		'attributes': {
 			'single_attributes': {},
@@ -30,8 +30,8 @@ def parse_task_item(task):
 		}
 	}
 	try:
-		if task.organization.templates[0].single_attributes[0]:
-			for s in task.organization.templates[0].single_attributes:
+		if task.template.single_attributes[0]:
+			for s in task.template.single_attributes:
 				task_item['attributes']['single_attributes'].update({s.key: atrib_regex(task.user.sync_username,
 																						task.user.first_name,
 																						task.user.last_name,
@@ -39,8 +39,8 @@ def parse_task_item(task):
 	except IndexError:
 		pass
 	try:
-		if task.organization.templates[0].multi_attributes[0]:
-			for s in task.organization.templates[0].multi_attributes:
+		if task.template.multi_attributes[0]:
+			for s in task.template.multi_attributes:
 				if s.key in task_item['attributes']['multi_attributes']:
 					task_item['attributes']['multi_attributes'][s.key].append(atrib_regex(task.user.sync_username,
 																						  task.user.first_name,
@@ -132,7 +132,7 @@ def get_tasks(sesh, org_id=False):
 			if tasks:
 				return jsonify(tasks)
 			else:
-				return org_not_exist()
+				return jsonify({})
 		else:
 			return jsonify(tasks_fetch(sesh))
 	# End GET block
