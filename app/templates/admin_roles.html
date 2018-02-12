@@ -1,0 +1,26 @@
+<!-- Extends base layout -->
+{%extends "base.html" %}
+
+{% block content %}
+<main role="main">
+        <!-- Jumbotron -->
+        <!-- Featured Class -->
+        <div class="jumbotron">
+            <p><h1>Role Admin</h1></p>
+        </div>
+        <div>
+            <h3>Roles:</h3>
+            {% for r in roles %}
+            <form method="post" action="roles" class="inline">
+                {{ r.name }} <button type="submit" name="delete_role" value="{{ r.id }}" class="btn btn-xs btn-danger">Delete</button>
+            </form><br>
+            {% endfor %}
+            {{ newrole.hidden_tag() }}
+            <form method="post" action="" value="Add Role">
+            {{ newrole.newrole.name }} {{ newrole.newrole }}
+            <input class="btn btn-primary" type="submit" value="Add Role">
+            </form>
+        </div>
+</main>
+
+{% endblock %}

@@ -11,10 +11,21 @@ from .forms import \
 	MultiKeyValueModify, \
 	UserCreationForm, \
 	AddAdminUser, \
-	OUName
+	OUName, \
+	AddRole, \
+	NewRole
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
+def get_current_role_ids(session, template_id):
+	template = session.query(models.UserTemplate).filter_by(id=template_id).first()
+	roleids = []
+	for r in template.roles:
+		roleids.append(r.id)
+	return roleids
+
+def get_template(session, id):
+	return session.query(models.UserTemplate).filter_by(id=id).first()
 
 def delete_user(user_id):
 	sesh = db.session()
@@ -27,6 +38,8 @@ def delete_user(user_id):
 	finally:
 		sesh.close()
 
+def get_role(session, id):
+	return session.query(models.Role).filter_by(id=id).first()
 
 def create_user(username, first_name, last_name, password, session):
 	user = models.User(username, password, first_name.lower(), last_name.lower())
@@ -68,42 +81,9 @@ def load_user(username):
 def before_request():
 	g.user = current_user
 
-@app.route('/index', methods=['GET', 'POST'])
-@required('technician')
-@login_required
-@with_db_session
-def index(sesh):
-	form = PasswordChange()
-	if form.password.data:
-		password = form.password.data
-		user = sesh.query(models.User).filter_by(id=g.user.id).first()
-		user.set_sync_password(password)
-		sesh.add(user)
-		app.logger.info("{} changed their sync password".format(g.user.username))
-		sesh.commit()
-		flash("Sync password changed.")
-		return redirect(url_for('index'))
-	if not g.user.is_authenticated:
-		return(redirect(url_for('login')))
-	log_pageview(request.path)
-	if g.user.first_name and g.user.last_name:
-		friendly_name = g.user.first_name + ' ' + g.user.last_name
-	else:
-		friendly_name = g.user.username
-	# Build task list
-
-	return render_template(
-		'home.html',
-		friendly_name=friendly_name.title(),
-		user=g.user,
-		form=form,
-		version_number=version_number,
-		title='Home'
-	)
-
 @app.route('/admin/orgs', methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_orgs(sesh):
 	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
@@ -125,9 +105,41 @@ def admin_orgs(sesh):
 			orgs=orgs
 		)
 
-@app.route('/admin', methods=['GET'])
-@required('admin')
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
+@required('technician')
+@with_db_session
+def index(sesh):
+	form = PasswordChange()
+	if form.password.data:
+		password = form.password.data
+		user = sesh.query(models.User).filter_by(id=g.user.id).first()
+		user.set_sync_password(password)
+		sesh.add(user)
+		app.logger.info("{} changed their sync password".format(g.user.username))
+		sesh.commit()
+		flash("Sync password changed.")
+		return redirect(url_for('index'))
+	if not g.user.is_authenticated:
+		return(redirect(url_for('login')))
+	log_pageview(request.path)
+	if g.user.first_name and g.user.last_name:
+		friendly_name = g.user.first_name + ' ' + g.user.last_name
+	else:
+		friendly_name = g.user.username
+	# Build task list
+	return render_template(
+		'home.html',
+		friendly_name=friendly_name.title(),
+		user=g.user,
+		form=form,
+		version_number=version_number,
+		title='Home'
+	)
+
+@app.route('/admin', methods=['GET'])
+@login_required
+@required('admin')
 def admin():
 	return render_template(
 		'admin.html',
@@ -136,8 +148,8 @@ def admin():
 	)
 
 @app.route('/admin/org', methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_org(sesh):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -212,8 +224,8 @@ def admin_org(sesh):
 	#End GET block
 
 @app.route('/admin/org/template', methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_org_template(sesh, **kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -228,11 +240,20 @@ def admin_org_template(sesh, **kwargs):
 	mvform = MultiKeyValueModify()
 	new_mvform = MultiKeyValueAdd()
 	ouform = OUName()
-
+	roleform = AddRole()
+    # Begin POST block
 	if request.method == 'POST':
 		template_id = request.args.get('template_id', default=1, type=int)
+		""" Stuff Every request needs """
+		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 		""" Single Value Logic """
-		if svform.mod_key.data or svform.mod_delete.data == True:
+		if request.form.getlist('remove_role'):
+				role_id = request.form['remove_role']
+				role = get_role(sesh, role_id)
+				template.roles.remove(role)
+				sesh.commit()
+				flash("Removed role {} from template {}".format(role.name, template.name))
+		elif svform.mod_key.data or svform.mod_delete.data == True:
 			if selected_single_attribute:
 				single_atrib = sesh.query(models.SingleAttributes).filter_by(id=selected_single_attribute).first()
 				if svform.mod_delete.data == True:
@@ -265,21 +286,37 @@ def admin_org_template(sesh, **kwargs):
 					sesh.add(multi_atrib)
 					sesh.commit()
 					flash("Attribute Editied")
-		if new_mvform.mkey.data:
+		elif new_mvform.mkey.data:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			template.add_multi_attribute(new_mvform.mkey.data, new_mvform.mvalue.data)
 			sesh.add(template)
 			sesh.commit()
 			flash("Attribute Added")
-		if ouform.ouname.data:
+		elif ouform.ouname.data:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			template.user_ou = ouform.ouname.data
 			sesh.add(template)
 			sesh.commit()
 			flash("OU DN changed")
+		elif not roleform.rolename.data == roleform.rolename.default:
+			role = sesh.query(models.Role).filter_by(id=roleform.rolename.data).first()
+			template.add_role(role)
+			sesh.add(role)
+			sesh.commit()
+			flash("Added role {} to template {}.".format(role.name, template.name))
 		# After we are done submitting values, redirect to the page we submitted from
 		return (redirect(url_for('admin_org_template', template_id=template_id)))
+	# End POST block
+	# Begin GET block
 	if request.method == 'GET':
+		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
+			# Logic to populate Roles drop down
+		roles = sesh.query(models.Role).all()
+		choices = [(0, "Select Template")]
+		for r in roles:
+			if r.id not in get_current_role_ids(sesh, template_id):
+				choices.append((r.id, r.name))
+			roleform.rolename.choices = choices
 		if delete == 1:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 			orgid = template.organization
@@ -291,7 +328,7 @@ def admin_org_template(sesh, **kwargs):
 			sesh.commit()
 			return(redirect(url_for('admin_org', admin_org=orgid)))
 		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
-		org = sesh.query(models.Organization).filter_by(id=template.organization).first()
+		org = template.organization
 		templates = org.templates
 		single_attributes = template.single_attributes
 		multi_attributes = template.multi_attributes
@@ -323,7 +360,8 @@ def admin_org_template(sesh, **kwargs):
 			mvform=mvform,
 			version_number=version_number,
 			new_mvform=new_mvform,
-			ouform=ouform
+			ouform=ouform,
+			roleform=roleform
 		)
 
 
@@ -350,7 +388,6 @@ def login():
 				flash("Incorrect password")
 		else:
 			app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
-			flash("Incorrect username")
 	return render_template('login.html',
 						   title='Sign In',
 						   version_number=version_number,
@@ -358,8 +395,8 @@ def login():
 
 
 @app.route("/admin/users", methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_users(sesh):
 	userform = UserCreationForm()
@@ -382,15 +419,44 @@ def admin_users(sesh):
 
 
 @app.route("/admin/user", methods=['GET', 'POST'])
-@required('admin')
 @login_required
+@required('admin')
 @with_db_session
 def admin_user(sesh):
 	form = AddName()
+	roleform = AddRole()
 	user_id = request.args.get('user_id', default=0, type=int)
 	delete = request.args.get('delete', default=0, type=int)
+
+	user = sesh.query(models.User).filter_by(id=user_id).first()
+	# Begin POST block
+	if request.method == 'POST':
+		if not roleform.rolename.data == roleform.rolename.default:
+			role = sesh.query(models.Role).filter_by(id=roleform.rolename.data).first()
+			user.add_role(role)
+			sesh.add(role)
+			sesh.add(user)
+			sesh.commit()
+			flash("Role {} added to user {}".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+		elif request.form.getlist('remove_role'):
+			role_id = request.form['remove_role']
+			role = get_role(sesh, role_id)
+			user.roles.remove(role)
+			sesh.add(user)
+			sesh.commit()
+			flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+		return redirect(url_for('admin_user', user_id=user_id))
+	# End POST block
 	# Begin GET block
-	if request.method == 'GET':
+
+	elif request.method == 'GET':
+		# Build role selector
+		roles = sesh.query(models.Role).all()
+		choices = [(0, "Select Template")]
+		for r in roles:
+			if r not in user.roles:
+				choices.append((r.id, r.name))
+		roleform.rolename.choices = choices
 		if delete == 1:
 			delete_user(user_id)
 			return redirect(url_for('admin_users'))
@@ -399,23 +465,43 @@ def admin_user(sesh):
 		return render_template('admin_user.html',
 							   form=form,
 							   roles=roles,
+							   roleform=roleform,
 							   version_number=version_number,
 							   user=user)
 	# End GET block
+
+
+@app.route("/admin/roles", methods=['GET', 'POST'])
+@login_required
+@required('admin')
+@with_db_session
+def admin_roles(sesh):
+	""" Forms """
+	newrole = NewRole()
+	roles = sesh.query(models.Role).all()
 	# Begin POST block
-	elif request.method == 'POST':
-		rolename = form.name.data
-		user = sesh.query(models.User).filter_by(id=user_id).first()
-		role = sesh.query(models.Role).filter_by(name=rolename).first()
-		if not role:
-			role = models.Role(rolename)
-		user.add_roles(role)
-		sesh.add(user)
-		sesh.add(role)
-		sesh.commit()
-		flash('Added role {} to user {} {}'.format(role.name, user.first_name, user.last_name))
-		return redirect(url_for('admin_user', user_id=user_id))
+	if request.method == 'POST':
+		if request.form.getlist('delete_role'):
+			role_id = request.form['delete_role']
+			role = get_role(sesh, role_id)
+			sesh.delete(role)
+			sesh.commit()
+			flash("Deleted role {}".format(role.name))
+		elif newrole.newrole.data:
+			role = models.Role(newrole.newrole.data)
+			sesh.add(role)
+			sesh.commit()
+			flash("Added role {}".format(role.name))
+		return redirect(url_for('admin_roles'))
 	# End POST block
+	# Begin GET block
+	if request.method == 'GET':
+		roles = sesh.query(models.Role).all()
+		return render_template('admin_roles.html',
+							   roles=roles,
+							   newrole=newrole,
+							   version_number=version_number)
+	#End GET block
 
 @app.route("/logout")
 @login_required

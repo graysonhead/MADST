@@ -36,7 +36,11 @@ finally:
 """ Add admin user """
 sesh = db.session()
 try:
-	user = models.User('admin', 'admin', 'admin', 'user', roles='Admin')
+	user = models.User('admin', 'admin', 'admin', 'user')
+	techrole = models.Role('technician')
+	adminrole = models.Role('admin')
+	user.roles.append(adminrole)
+	user.roles.append(techrole)
 	sesh.add(user)
 	sesh.commit()
 except:

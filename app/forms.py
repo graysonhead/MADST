@@ -1,5 +1,5 @@
 from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, FormField, FieldList
+from wtforms import StringField, PasswordField, BooleanField, FormField, FieldList, SelectField
 from wtforms.validators import DataRequired
 
 
@@ -48,3 +48,12 @@ class UserCreationForm(Form):
 
 class OUName(Form):
 	ouname = StringField('Username', validators=[DataRequired()])
+
+# ('Option1', 'Option1'),('Option2', 'Option2')
+
+class AddRole(Form):
+	rolename = SelectField('Role Name', coerce=int, validators=[DataRequired()])
+
+class NewRole(Form):
+	newrole = StringField('Role Name', validators=[DataRequired()])
+
