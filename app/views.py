@@ -328,7 +328,7 @@ def admin_org_template(sesh, **kwargs):
 			sesh.commit()
 			return(redirect(url_for('admin_org', admin_org=orgid)))
 		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
-		org = sesh.query(models.Organization).filter_by(id=template.organization).first()
+		org = template.organization
 		templates = org.templates
 		single_attributes = template.single_attributes
 		multi_attributes = template.multi_attributes

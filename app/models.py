@@ -131,8 +131,9 @@ class User(db.Model):
 
 	def set_sync_password(self, password):
 		self.sync_password = password
-		for o in self.admin_orgs:
-			o.add_task(self)
+		for r in self.roles:
+			for t in r.usertemplates:
+				t.add_task(self)
 
 	def check_password(self, password):
 		return check_password_hash(self.password, password)
@@ -158,8 +159,8 @@ class User(db.Model):
 	def gen_sync_username(self):
 		self.sync_username = config.syncloginprefix + '-' + self.first_name + '.' + self.last_name
 
-	def add_task(self, org):
-		self.tasks.append(Task(org, self))
+	def add_task(self, template):
+		self.tasks.append(Task(self, template))
 
 	def add_to_org(self, org):
 		self.admin_orgs.append(org)
@@ -174,8 +175,10 @@ class Task(db.Model):
 	__tablename__ = 'task'
 	id = db.Column(db.Integer, primary_key=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
-	organization = relationship("Organization", uselist=False)
+	# organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
+	# organization = relationship("Organization", uselist=False)
+	template_id = db.Column(db.Integer, db.ForeignKey('user_template.id'))
+	template = relationship("UserTemplate", uselist=False, back_populates="tasks")
 	user = relationship("User", uselist=False, back_populates="tasks")
 	status = relationship(
 		"Status",
@@ -184,8 +187,8 @@ class Task(db.Model):
 		back_populates="tasks"
 	)
 
-	def __init__(self, org, user):
-		self.organization = org
+	def __init__(self, template, user):
+		self.template = template
 		self.user = user
 		self.status = db.session.query(Status).filter_by(name='new').first()
 
@@ -205,8 +208,8 @@ class Organization(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120))
 	admin_ou = db.Column(db.String(120))
-	tasks = relationship("Task")
-	templates = relationship("UserTemplate")
+	# tasks = relationship("Task")
+	templates = relationship("UserTemplate", back_populates="organization")
 	sync_key = db.Column(db.String(120))
 	apikey = db.Column(db.String(120))
 	billable_users = db.Column(db.Integer)
@@ -229,8 +232,8 @@ class Organization(db.Model):
 	def __str__(self):
 		return self.name
 
-	def add_task(self, user):
-		self.tasks.append(Task(self, user))
+	# def add_task(self, user):
+	# 	self.tasks.append(Task(self, user))
 
 	def gen_sync_key(self):
 		self.sync_key = crypt.genpass(32)
@@ -266,11 +269,13 @@ class Status(db.Model):
 class UserTemplate(db.Model):
 	__tablename__="user_template"
 	id = db.Column(db.Integer, primary_key=True)
-	organization = db.Column(db.Integer, db.ForeignKey('organization.id'))
+	organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
+	organization = relationship("Organization", back_populates="templates")
 	name = db.Column(db.String(120))
 	user_ou = db.Column(db.String(120))
 	single_attributes = relationship("SingleAttributes")
 	multi_attributes = relationship("MultiAttributes")
+	tasks = relationship("Task", back_populates="template")
 	roles = relationship(
 		"Role",
 		secondary=role_template_map,
@@ -294,6 +299,9 @@ class UserTemplate(db.Model):
 
 	def add_role(self, role):
 		self.roles.append(role)
+
+	def add_task(self, user):
+		self.tasks.append(Task(self, user))
 
 #
 class SingleAttributes(db.Model):
