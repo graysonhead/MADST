@@ -16,7 +16,7 @@ def parse_task_item(task):
 		'organization': {
 			'id': task.template.organization_id,
 			'name': task.template.organization.name,
-			'admin_ou': task.template.organization.admin_ou
+			'admin_ou': task.template.user_ou
 		},
 		'user': {
 			'first_name': task.user.first_name.title(),
