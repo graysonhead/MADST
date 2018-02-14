@@ -77,7 +77,9 @@ def get_billable_users(sesh, org_id):
 def tasks_fetch(sesh, org_id=False):
 	tasks = {}
 	if org_id:
-		db_tasks = sesh.query(models.Task).filter_by(organization_id=org_id).all()
+		db_tasks = []
+		for template in sesh.query(models.UserTemplate).filter_by(organization_id=org_id).all():
+			db_tasks.extend(template.tasks)
 	else:
 		db_tasks = sesh.query(models.Task).all()
 	for i, val in enumerate(db_tasks):
