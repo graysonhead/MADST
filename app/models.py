@@ -173,6 +173,9 @@ class User(db.Model):
 		self.disabled = 'True'
 
 	def enable(self):
+		for r in self.roles:
+			for t in r.usertemplates:
+				t.add_task(self, task_type='enable')
 		self.disabled = None
 
 	def __repr__(self):

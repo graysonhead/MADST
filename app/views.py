@@ -436,6 +436,7 @@ def admin_user(sesh):
 	user_id = request.args.get('user_id', default=0, type=int)
 	delete = request.args.get('delete', default=0, type=int)
 	disable = request.args.get('disable', default=0, type=int)
+	enable = request.args.get('enable', default=0, type=int)
 	user = sesh.query(models.User).filter_by(id=user_id).first()
 	# Begin POST block
 	if request.method == 'POST':
@@ -483,6 +484,10 @@ def admin_user(sesh):
 				user.disable()
 				sesh.add(user)
 				sesh.commit()
+		elif enable == 1:
+			user.enable()
+			sesh.add(user)
+			sesh.commit()
 		roles = user.roles
 		return render_template('admin_user.html',
 							   form=form,
