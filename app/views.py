@@ -435,7 +435,7 @@ def admin_user(sesh):
 	roleform = AddRole()
 	user_id = request.args.get('user_id', default=0, type=int)
 	delete = request.args.get('delete', default=0, type=int)
-
+	disable = request.args.get('disable', default=0, type=int)
 	user = sesh.query(models.User).filter_by(id=user_id).first()
 	# Begin POST block
 	if request.method == 'POST':
@@ -449,10 +449,13 @@ def admin_user(sesh):
 		elif request.form.getlist('remove_role'):
 			role_id = request.form['remove_role']
 			role = get_role(sesh, role_id)
-			user.roles.remove(role)
-			sesh.add(user)
-			sesh.commit()
-			flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+			if role.name == 'admin' and len(role.users) == 1:
+				flash("You can't remove the last user from the admin group, or you won't be able to add any more users.")
+			else:
+				user.roles.remove(role)
+				sesh.add(user)
+				sesh.commit()
+				flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
 		return redirect(url_for('admin_user', user_id=user_id))
 	# End POST block
 	# Begin GET block
@@ -466,9 +469,18 @@ def admin_user(sesh):
 				choices.append((r.id, r.name))
 		roleform.rolename.choices = choices
 		if delete == 1:
-			delete_user(user_id)
-			return redirect(url_for('admin_users'))
-		user = sesh.query(models.User).filter_by(id=user_id).first()
+			if user.check_role('admin'):
+				flash("You cannot delete admin users without first removing them from the admin group.")
+			else:
+				delete_user(user_id)
+				return redirect(url_for('admin_users'))
+		if disable == 1:
+			if user.check_role('admin'):
+				flash("You cannot disable admin users without first removing them from the admin group.")
+			else:
+				user.disable()
+				sesh.add(user)
+				sesh.commit()
 		roles = user.roles
 		return render_template('admin_user.html',
 							   form=form,
