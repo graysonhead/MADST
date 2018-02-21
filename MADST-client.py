@@ -46,6 +46,10 @@ def disable_user(cn):
 	user = aduser.ADUser.from_cn(cn)
 	user.disable()
 
+def enable_user(cn):
+	user = aduser.ADUser.from_cn(cn)
+	user.enable()
+
 
 def check_user_exists(cn):
 	""" Returns True if you are trying to create an existing CN """
@@ -130,6 +134,15 @@ while True:
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 				try:
 					disable_user(cn)
+					change_task_status(value['id'], '3')
+					print("Task {} changed to status {}".format(value['id'], '3'))
+				except:
+					change_task_status(value['id'], '4')
+					print("Task {} changed to status {}".format(value['id'], '4'))
+			if value['type'] == 'enable':
+				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+				try:
+					enable_user(cn)
 					change_task_status(value['id'], '3')
 					print("Task {} changed to status {}".format(value['id'], '3'))
 				except:
