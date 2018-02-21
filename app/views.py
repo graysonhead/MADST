@@ -451,6 +451,8 @@ def admin_user(sesh):
 			role = get_role(sesh, role_id)
 			if role.name == 'admin' and len(role.users) == 1:
 				flash("You can't remove the last user from the admin group, or you won't be able to add any more users.")
+			elif user_id == current_user.id:
+				flash("You can't remove yourself from the admin group, another admin has to do that.")
 			else:
 				user.roles.remove(role)
 				sesh.add(user)
