@@ -89,6 +89,7 @@ class User(db.Model):
 	password = db.Column(db.String(120))
 	sync_password = db.Column(db.String(120))
 	sync_username = db.Column(db.String(120))
+	disabled = db.Column(db.String(120))
 	__tablename__ = 'user'
 	tasks = relationship("Task", back_populates="user")
 
@@ -159,11 +160,20 @@ class User(db.Model):
 	def gen_sync_username(self):
 		self.sync_username = config.syncloginprefix + '-' + self.first_name + '.' + self.last_name
 
-	def add_task(self, template):
-		self.tasks.append(Task(self, template))
+	def add_task(self, template, task_type='create'):
+		self.tasks.append(Task(self, template, task_type))
 
 	def add_to_org(self, org):
 		self.admin_orgs.append(org)
+
+	def disable(self):
+		for r in self.roles:
+			for t in r.usertemplates:
+				t.add_task(self, task_type='disable')
+		self.disabled = 'True'
+
+	def enable(self):
+		self.disabled = None
 
 	def __repr__(self):
 		return '<User %r>' % self.username
@@ -175,6 +185,7 @@ class Task(db.Model):
 	__tablename__ = 'task'
 	id = db.Column(db.Integer, primary_key=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	task_type = db.Column(db.String(120))
 	# organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'))
 	# organization = relationship("Organization", uselist=False)
 	template_id = db.Column(db.Integer, db.ForeignKey('user_template.id'))
@@ -187,9 +198,10 @@ class Task(db.Model):
 		back_populates="tasks"
 	)
 
-	def __init__(self, template, user):
+	def __init__(self, template, user, task_type='create'):
 		self.template = template
 		self.user = user
+		self.task_type = task_type
 		self.status = db.session.query(Status).filter_by(name='new').first()
 
 	def __repr__(self):
@@ -199,7 +211,7 @@ class Task(db.Model):
 		try:
 			status_id = int(status_id)
 		except:
-			self.status = status.id
+			self.status = status_id
 		else:
 			self.status = db.session.query(Status).filter_by(id=status_id).first()
 
@@ -300,8 +312,8 @@ class UserTemplate(db.Model):
 	def add_role(self, role):
 		self.roles.append(role)
 
-	def add_task(self, user):
-		self.tasks.append(Task(self, user))
+	def add_task(self, user, task_type='create'):
+		self.tasks.append(Task(self, user, task_type))
 
 #
 class SingleAttributes(db.Model):

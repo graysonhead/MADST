@@ -20,9 +20,9 @@
         </form>
     <div>
         <h2>Admin Actions</h2>
-        <button class="btn btn-default" data-toggle="confirmation">Confirmation</button>
         <input class="btn btn-success" value="Resync This User" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, resync=1) }}';">
         <input class="btn btn-danger" data-toggle="confirmation" value="Delete" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, delete=1) }}';">
+        <input class="btn btn-danger" data-toggle="confirmation" value="Disable" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, disable=1) }}';">
     </div>
 </main>
 {% endblock %}

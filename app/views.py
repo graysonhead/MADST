@@ -1,6 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
+from werkzeug.exceptions import Forbidden
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
-from .decorators import required, with_db_session
+from .decorators import required, with_db_session, no_disabled_users
 from .forms import \
 	LoginForm, \
 	PasswordChange, \
@@ -84,6 +85,7 @@ def before_request():
 @app.route('/admin/orgs', methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_orgs(sesh):
 	""" Displays list of organizations and allows you to navigate to their respective admin pages"""
@@ -108,6 +110,7 @@ def admin_orgs(sesh):
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 @required('technician')
+@no_disabled_users
 @with_db_session
 def index(sesh):
 	form = PasswordChange()
@@ -140,6 +143,7 @@ def index(sesh):
 @app.route('/admin', methods=['GET'])
 @login_required
 @required('admin')
+@no_disabled_users
 def admin():
 	return render_template(
 		'admin.html',
@@ -150,6 +154,7 @@ def admin():
 @app.route('/admin/org', methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_org(sesh):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -226,6 +231,7 @@ def admin_org(sesh):
 @app.route('/admin/org/template', methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_org_template(sesh, **kwargs):
 	""" Allows viewing and modification of Organization Attributes"""
@@ -397,6 +403,7 @@ def login():
 @app.route("/admin/users", methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_users(sesh):
 	userform = UserCreationForm()
@@ -421,13 +428,14 @@ def admin_users(sesh):
 @app.route("/admin/user", methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_user(sesh):
 	form = AddName()
 	roleform = AddRole()
 	user_id = request.args.get('user_id', default=0, type=int)
 	delete = request.args.get('delete', default=0, type=int)
-
+	disable = request.args.get('disable', default=0, type=int)
 	user = sesh.query(models.User).filter_by(id=user_id).first()
 	# Begin POST block
 	if request.method == 'POST':
@@ -441,10 +449,15 @@ def admin_user(sesh):
 		elif request.form.getlist('remove_role'):
 			role_id = request.form['remove_role']
 			role = get_role(sesh, role_id)
-			user.roles.remove(role)
-			sesh.add(user)
-			sesh.commit()
-			flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
+			if role.name == 'admin' and len(role.users) == 1:
+				flash("You can't remove the last user from the admin group, or you won't be able to add any more users.")
+			elif user_id == current_user.id:
+				flash("You can't remove yourself from the admin group, another admin has to do that.")
+			else:
+				user.roles.remove(role)
+				sesh.add(user)
+				sesh.commit()
+				flash("Removed role {} from user {}.".format(role.name, user.first_name.title() + ' ' + user.last_name.title()))
 		return redirect(url_for('admin_user', user_id=user_id))
 	# End POST block
 	# Begin GET block
@@ -458,9 +471,18 @@ def admin_user(sesh):
 				choices.append((r.id, r.name))
 		roleform.rolename.choices = choices
 		if delete == 1:
-			delete_user(user_id)
-			return redirect(url_for('admin_users'))
-		user = sesh.query(models.User).filter_by(id=user_id).first()
+			if user.check_role('admin'):
+				flash("You cannot delete admin users without first removing them from the admin group.")
+			else:
+				delete_user(user_id)
+				return redirect(url_for('admin_users'))
+		if disable == 1:
+			if user.check_role('admin'):
+				flash("You cannot disable admin users without first removing them from the admin group.")
+			else:
+				user.disable()
+				sesh.add(user)
+				sesh.commit()
 		roles = user.roles
 		return render_template('admin_user.html',
 							   form=form,
@@ -474,6 +496,7 @@ def admin_user(sesh):
 @app.route("/admin/roles", methods=['GET', 'POST'])
 @login_required
 @required('admin')
+@no_disabled_users
 @with_db_session
 def admin_roles(sesh):
 	""" Forms """
