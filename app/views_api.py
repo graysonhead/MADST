@@ -8,7 +8,7 @@ import re
 def parse_task_item(task):
 	task_item = {
 		'id': task.id,
-		'type': 'create',
+		'type': task.task_type,
 		'status': {
 			'id': task.status.id,
 			'name': task.status.name

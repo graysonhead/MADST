@@ -36,9 +36,19 @@ def required(role):
 			current_user = import_user()
 			if current_user.check_role(role):
 				return func(*args, **kwargs)
-			raise Forbidden("Your roles do not grant you access to this page")
+			raise Forbidden("Your roles do not grant you access to this page, or your account is disabled.")
 		return inner
 	return wrapper
+
+def no_disabled_users(func):
+	@wraps(func)
+	def inner(*args, **kwargs):
+		current_user = import_user()
+		if current_user.disabled:
+			raise Forbidden("Your roles do not grant you access to this page, or your account is disabled.")
+		else:
+			return func(*args, **kwargs)
+	return inner
 
 
 def api_key_required():
