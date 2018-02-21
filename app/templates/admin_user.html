@@ -5,6 +5,12 @@
     <div class="jumbotron">
             <p><h1>User Admin: {{ user.username }} - {{ user.first_name.title() }} {{ user.last_name.title() }}</h1></p>
     </div>
+    Account Status:
+    {% if user.disabled %}
+    disabled
+    {% else %}
+    enabled
+    {% endif %}
     <div><h2>User Roles:</h2>
         {% for r in roles %}
         <form method="post" action="user?user_id={{ user.id }}" class="inline">
@@ -22,7 +28,7 @@
         <h2>Admin Actions</h2>
         <input class="btn btn-success" value="Resync This User" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, resync=1) }}';">
         <input class="btn btn-danger" data-toggle="confirmation" value="Delete" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, delete=1) }}';">
-        {% if not user.disabled %}
+        {% if user.disabled %}
         <input class="btn btn-success" data-toggle="confirmation" value="Enable" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, enable=1) }}';">
         {% else %}
         <input class="btn btn-danger" data-toggle="confirmation" value="Disable" onclick="location.href = '{{ url_for('admin_user', user_id=user.id, disable=1) }}';">
