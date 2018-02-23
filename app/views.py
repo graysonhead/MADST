@@ -14,7 +14,8 @@ from .forms import \
 	AddAdminUser, \
 	OUName, \
 	AddRole, \
-	NewRole
+	NewRole, \
+	BillingGroup
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -163,6 +164,8 @@ def admin_org(sesh):
 	resync = request.args.get('resync', default=0, type=int)
 	form = AddName()
 	userform = AddAdminUser()
+	billinggroupform = BillingGroup()
+	org = sesh.query(models.Organization).filter_by(id=org_id).first()
 	# Begin POST block
 	if request.method == 'POST':
 		if form.name.data:
@@ -182,12 +185,17 @@ def admin_org(sesh):
 			sesh.add(user)
 			sesh.commit()
 			flash("Added admin user {} to org {}".format(user.username, org.name))
+		elif billinggroupform.group.data:
+			org.billing_group = billinggroupform.group.data
+			sesh.add(org)
+			sesh.commit()
+			flash("Changed billing OU for org {} to {}".format(org.name, billinggroupform.group.data))
 		return(redirect(url_for("admin_org", org_id = org_id)))
 	# End POST block
 	# Begin GET block
 	if request.method == 'GET':
+		billinggroupform.group.data = org.billing_group
 		if delete == 1:
-			org = sesh.query(models.Organization).filter_by(id=org_id).first()
 			for tmp in org.templates:
 				# Clean up single attributes in org
 				for sa in tmp.single_attributes:
@@ -224,7 +232,8 @@ def admin_org(sesh):
 			org=org,
 			admin_users=admin_users,
 			version_number=version_number,
-			templates=templates
+			templates=templates,
+			billinggroupform=billinggroupform
 		)
 	#End GET block
 

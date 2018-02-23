@@ -145,15 +145,17 @@ def get_tasks(sesh, org_id=False):
 def api_org_usercount(sesh):
 	# Begin GET block
 	org_id = request.args.get('org_id', default=0, type=int)
+	org = sesh.query(models.Organization).filter_by(id=org_id).first()
 	if request.method == 'GET':
-		try:
-			billable_users = get_billable_users(sesh, org_id)
-		except:
-			return jsonify({"Error": "An internal server error occured"}), 500
-		if billable_users:
-			return jsonify({"Billable_Users": billable_users})
+		# try:
+		# 	# billable_users = get_billable_users(sesh, org_id)
+		# 	org
+		# except:
+		# 	return jsonify({"Error": "An internal server error occured"}), 500
+		if org.billable_users:
+			return jsonify({"Billable_Users": org.billable_users, "Billable_Group": org.billing_group})
 		else:
-			return org_not_exist()
+			return jsonify({"Billable_Users": None, "Billable_Group": org.billing_group})
 	# End GET block
 	# Begin PUT block
 	elif request.method == 'PUT':

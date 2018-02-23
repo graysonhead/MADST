@@ -223,6 +223,7 @@ class Organization(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120))
 	admin_ou = db.Column(db.String(120))
+	billing_group = db.Column(db.String(120))
 	# tasks = relationship("Task")
 	templates = relationship("UserTemplate", back_populates="organization")
 	sync_key = db.Column(db.String(120))

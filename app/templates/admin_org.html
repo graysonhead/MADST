@@ -29,6 +29,14 @@
         </form>
     </div>
     <div>
+        <h2>Billing Group:</h2>
+    <form action="" method="post" name="addgroup">
+        {{ billinggroupform.hidden_tag() }}
+        {{ billinggroupform.group.label }} {{ billinggroupform.group }}
+        <input class="btn btn-primary" type="submit" value="Change Billing Group">
+    </form>
+    </div>
+    <div>
         <h2>Client Info</h2>
         API Key: {{ org.apikey }} <br>
         Sync/API Password: {{ org.sync_key }}
