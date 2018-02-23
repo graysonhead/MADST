@@ -83,6 +83,16 @@
                 {{ roleform.rolename() }} <input class="btn btn-primary" type="submit" value="Add">
                 </form>
             </div>
+            <div>
+            <h2>Tasks</h2>
+              {% for i in g.user.tasks %}
+              Task id: {{ i.id }}<br>
+              Task Type: {{ i.task_type }}
+              <p>Directory: {{ i.template.organization.name.title() }}<br>Status:
+                  <font color={% if i.status.name.title() == 'New' %}"blue"{% elif i.status.name.title() == 'In Progress' or i.status.name.title() == 'Completed'%}"green"{% elif i.status.name.title() == 'Failed' %}"red"{% endif %}>
+                      {{ i.status.name.title() }}</p></font>
+              {% endfor %}
+          </div>
         </div>
     </div>
 
