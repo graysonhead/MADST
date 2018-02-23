@@ -153,9 +153,9 @@ def api_org_usercount(sesh):
 		# except:
 		# 	return jsonify({"Error": "An internal server error occured"}), 500
 		if org.billable_users:
-			return jsonify({"Billable_Users": org.billable_users, "Billable_Group": org.billing_group})
+			return jsonify({"billable_users": org.billable_users, "billable_group": org.billing_group})
 		else:
-			return jsonify({"Billable_Users": None, "Billable_Group": org.billing_group})
+			return jsonify({"billable_users": None, "billable_group": org.billing_group})
 	# End GET block
 	# Begin PUT block
 	elif request.method == 'PUT':
@@ -172,7 +172,7 @@ def api_org_usercount(sesh):
 		org.billable_users = billable_users
 		sesh.add(org)
 		sesh.commit()
-		return jsonify({"Billable_Users": get_billable_users(sesh, org_id)})
+		return jsonify({"billable_users": org.billable_users, "billable_group": org.billing_group})
 	#end PUT block
 
 
