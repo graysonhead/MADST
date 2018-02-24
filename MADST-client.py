@@ -95,14 +95,16 @@ def get_count_dn():
 
 @apiAuth
 def update_count(count):
-	requests.put(
+	r = requests.put(
 		config.host + 'api/org/users/count',
 		params={
 			'apikey': config.apikey,
-			'secret': config.private_key
+			'secret': config.private_key,
+			'org_id': config.org_id
 		},
-		json={'Billable_Users': count}
+		json={'billable_users': count}
 	)
+	return r
 
 @apiAuth
 def task_check():
