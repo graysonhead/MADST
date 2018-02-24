@@ -120,65 +120,65 @@ if __name__ == '__main__':
 if test:
 	print("Running in test mode.")
 while True:
-	# for key, value in task_check().json().items():
-	# 	if value['status']['id'] == 1:
-	# 		if value['type'] == 'create':
-	# 			cn = value['user']['first_name'] + ' ' + value['user']['last_name']
-	# 			password = value['user']['sync_password']
-	# 			password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
-	# 			if check_user_exists(cn) is True:
-	# 				try:
-	# 					update_password(cn, password)
-	# 					print('Updated User {}'.format(cn))
-	# 					change_task_status(value['id'], '3')
-	# 					print("Task {} changed to status {}".format(value['id'], '3'))
-	# 				except:
-	# 					change_task_status(value['id'], '4')
-	# 					print("Task {} changed to status {}".format(value['id'], '4'))
-	# 			else:
-	# 				# User doesn't exist, create them
-	# 				try:
-	# 					if not test:
-	# 						try:
-	# 							add_ad_user(get_ou(value['organization']['admin_ou']), cn, single_attributes=value['attributes']['single_attributes'], multi_attributes=value['attributes']['multi_attributes'])
-	# 						except pyadexceptions.InvalidAttribute:
-	# 							change_task_status(value['id'], '5')
-	# 							print("Task {} changed to status {}".format(value['id'], '5'))
-	# 							raise
-	# 						update_password(cn, password)
-	# 						print('Added User {}'.format(cn))
-	# 						added_users = added_users + 1
-	# 						change_task_status(value['id'], '3')
-	# 						print("Task {} changed to status {}".format(value['id'], '3'))
-	# 					elif test:
-	# 						print("Would have added user {} to ou {} with {} single attributes, and {} multi attributes.".format(cn, value['organization']['admin_ou'], value['attributes']['single_attributes'], value['attributes']['multi_attributes']))
-	# 						print("Would have changed task id {} to status {}".format(value['id'], '3'))
-	# 				except:
-	# 					if not value['id']['status']['id'] == 5:
-	# 						change_task_status(value['id'], '4')
-	# 						print("Task {} changed to status {}".format(value['id'], '4'))
-	# 					print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
-	# 					raise
-	# 		if value['type'] == 'disable':
-	# 			cn = value['user']['first_name'] + ' ' + value['user']['last_name']
-	# 			try:
-	# 				disable_user(cn)
-	# 				change_task_status(value['id'], '3')
-	# 				print("Task {} changed to status {}".format(value['id'], '3'))
-	# 			except:
-	# 				change_task_status(value['id'], '4')
-	# 				print("Task {} changed to status {}".format(value['id'], '4'))
-	# 		if value['type'] == 'enable':
-	# 			cn = value['user']['first_name'] + ' ' + value['user']['last_name']
-	# 			try:
-	# 				enable_user(cn)
-	# 				change_task_status(value['id'], '3')
-	# 				print("Task {} changed to status {}".format(value['id'], '3'))
-	# 			except:
-	# 				change_task_status(value['id'], '4')
-	# 				print("Task {} changed to status {}".format(value['id'], '4'))
-	# 	else:
-	# 		print('No new issues')
+	for key, value in task_check().items():
+		if value['status']['id'] == 1:
+			if value['type'] == 'create':
+				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+				password = value['user']['sync_password']
+				password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
+				if check_user_exists(cn) is True:
+					try:
+						update_password(cn, password)
+						print('Updated User {}'.format(cn))
+						change_task_status(value['id'], '3')
+						print("Task {} changed to status {}".format(value['id'], '3'))
+					except:
+						change_task_status(value['id'], '4')
+						print("Task {} changed to status {}".format(value['id'], '4'))
+				else:
+					# User doesn't exist, create them
+					try:
+						if not test:
+							try:
+								add_ad_user(get_ou(value['organization']['admin_ou']), cn, single_attributes=value['attributes']['single_attributes'], multi_attributes=value['attributes']['multi_attributes'])
+							except pyadexceptions.InvalidAttribute:
+								change_task_status(value['id'], '5')
+								print("Task {} changed to status {}".format(value['id'], '5'))
+								raise
+							update_password(cn, password)
+							print('Added User {}'.format(cn))
+							added_users = added_users + 1
+							change_task_status(value['id'], '3')
+							print("Task {} changed to status {}".format(value['id'], '3'))
+						elif test:
+							print("Would have added user {} to ou {} with {} single attributes, and {} multi attributes.".format(cn, value['organization']['admin_ou'], value['attributes']['single_attributes'], value['attributes']['multi_attributes']))
+							print("Would have changed task id {} to status {}".format(value['id'], '3'))
+					except:
+						if not value['id']['status']['id'] == 5:
+							change_task_status(value['id'], '4')
+							print("Task {} changed to status {}".format(value['id'], '4'))
+						print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
+						raise
+			if value['type'] == 'disable':
+				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+				try:
+					disable_user(cn)
+					change_task_status(value['id'], '3')
+					print("Task {} changed to status {}".format(value['id'], '3'))
+				except:
+					change_task_status(value['id'], '4')
+					print("Task {} changed to status {}".format(value['id'], '4'))
+			if value['type'] == 'enable':
+				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+				try:
+					enable_user(cn)
+					change_task_status(value['id'], '3')
+					print("Task {} changed to status {}".format(value['id'], '3'))
+				except:
+					change_task_status(value['id'], '4')
+					print("Task {} changed to status {}".format(value['id'], '4'))
+		else:
+			print('No new issues')
 	count_billable_cn()
 	# if added_users:
 	# 	print("Added {} users".format(added_users))

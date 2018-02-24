@@ -22,10 +22,8 @@ class apiAuth(object):
             print("A connection error occured, check the host and port and try again.")
             #TODO Log this instead of writing to stdout
         finally:
-            for line in self.func(*args).iter_lines():
-                print(line)
             try:
-                print(self.func(*args).json())
+                (self.func(*args).json())
             except ValueError:
                 print("no valid json")
                 return
