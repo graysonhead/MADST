@@ -1,6 +1,6 @@
 import requests
 
-class apiAuth(object):
+class ApiAuth(object):
     def __init__(self, func):
         """
         callable wrapper class for handling auth and connection errors on API calls

@@ -1,3 +1,4 @@
+import sys
 import socket
 import win32event
 import win32service
@@ -8,18 +9,15 @@ import base64
 from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad, aduser, adgroup, pyadexceptions
 import time
 import argparse
-import sys
-from decorators import *
+import ApiCalls
+from madst_error import *
 
 try:
 	import config
 except ImportError:
-	print("Failed to import config, please ensure the example is copied to config.py.")
-	sys.exit(1)
+	raise madst_config_error("Failed to import config, please ensure the example is copied to config.py.")
 
 class MADST_Client(object):
-
-
 	_svc_name_ = "MADST Client"
 	_svc_display_name_ = "MADST Client"
 
@@ -83,55 +81,19 @@ class MADST_Client(object):
 		if user:
 			return True
 
-	def decrypt(string, pkey):
+	def decrypt(self, string, pkey):
 		cipher = AES.new(pkey, AES.MODE_ECB)
 		passout = cipher.decrypt(base64.b64decode(string))
 		return passout.strip()
 
-	@apiAuth
-	def change_task_status(task_id, status_id):
-		requests.put(config.host + 'api/task/'+str(task_id), params={'apikey': config.apikey, 'secret': config.private_key}, json={'status': status_id})
-
 	def count_billable_cn(self):
-		r = self.get_count_dn()
+		r = ApiCalls.get_count_dn()
 		billable_group = r['billable_group']
 		l = adgroup.ADGroup(distinguished_name=billable_group).get_members(recursive=True)
 		count=0
 		for item in l:
 			count +=1
-		self.update_count(count)
-
-	@apiAuth
-	def get_count_dn(self):
-		r = requests.get(
-			config.host + 'api/org/users/count',
-			params={
-				'apikey': config.apikey,
-				'secret': config.private_key,
-				'org_id': config.org_id
-			}
-		)
-		return r
-
-	@apiAuth
-	def update_count(self, count):
-		r = requests.put(
-			config.host + 'api/org/users/count',
-			params={
-				'apikey': config.apikey,
-				'secret': config.private_key,
-				'org_id': config.org_id
-			},
-			json={'billable_users': count}
-		)
-		return r
-
-	@apiAuth
-	def task_check(self):
-		params = {'apikey': config.apikey, 'secret': config.private_key, 'org_id': config.org_id}
-		return requests.get(config.host + 'api/tasks', params=params)
-
-
+		ApiCalls.update_count(count)
 
 	def SvcStop(self):
 		self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
@@ -139,7 +101,7 @@ class MADST_Client(object):
 
 	def SvcDoRun(self):
 		while True:
-			for key, value in self.task_check().items():
+			for key, value in ApiCalls.task_check().items():
 				if value['status']['id'] == 1:
 					if value['type'] == 'create':
 						cn = value['user']['first_name'] + ' ' + value['user']['last_name']
@@ -149,10 +111,10 @@ class MADST_Client(object):
 							try:
 								self.update_password(cn, password)
 								print('Updated User {}'.format(cn))
-								self.change_task_status(value['id'], '3')
+								ApiCalls.change_task_status(value['id'], '3')
 								print("Task {} changed to status {}".format(value['id'], '3'))
 							except:
-								self.change_task_status(value['id'], '4')
+								ApiCalls.change_task_status(value['id'], '4')
 								print("Task {} changed to status {}".format(value['id'], '4'))
 						else:
 							# User doesn't exist, create them
@@ -161,20 +123,20 @@ class MADST_Client(object):
 									try:
 										self.add_ad_user(self.get_ou(value['organization']['admin_ou']), cn, single_attributes=value['attributes']['single_attributes'], multi_attributes=value['attributes']['multi_attributes'])
 									except pyadexceptions.InvalidAttribute:
-										self.change_task_status(value['id'], '5')
+										ApiCalls.change_task_status(value['id'], '5')
 										print("Task {} changed to status {}".format(value['id'], '5'))
 										raise
 									self.update_password(cn, password)
 									print('Added User {}'.format(cn))
 									self.added_users = self.added_users + 1
-									self.change_task_status(value['id'], '3')
+									ApiCalls.change_task_status(value['id'], '3')
 									print("Task {} changed to status {}".format(value['id'], '3'))
 								elif self.test:
 									print("Would have added user {} to ou {} with {} single attributes, and {} multi attributes.".format(cn, value['organization']['admin_ou'], value['attributes']['single_attributes'], value['attributes']['multi_attributes']))
 									print("Would have changed task id {} to status {}".format(value['id'], '3'))
 							except:
 								if not value['id']['status']['id'] == 5:
-									self.change_task_status(value['id'], '4')
+									ApiCalls.change_task_status(value['id'], '4')
 									print("Task {} changed to status {}".format(value['id'], '4'))
 								print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
 								raise
@@ -182,19 +144,19 @@ class MADST_Client(object):
 						cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 						try:
 							self.disable_user(cn)
-							self.change_task_status(value['id'], '3')
+							ApiCalls.change_task_status(value['id'], '3')
 							print("Task {} changed to status {}".format(value['id'], '3'))
 						except:
-							self.change_task_status(value['id'], '4')
+							ApiCalls.change_task_status(value['id'], '4')
 							print("Task {} changed to status {}".format(value['id'], '4'))
 					if value['type'] == 'enable':
 						cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 						try:
 							self.enable_user(cn)
-							self.change_task_status(value['id'], '3')
+							ApiCalls.change_task_status(value['id'], '3')
 							print("Task {} changed to status {}".format(value['id'], '3'))
 						except:
-							self.change_task_status(value['id'], '4')
+							ApiCalls.change_task_status(value['id'], '4')
 							print("Task {} changed to status {}".format(value['id'], '4'))
 				else:
 					print('No new issues')
