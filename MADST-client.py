@@ -93,13 +93,13 @@ class MADST_Client(object):
 		requests.put(config.host + 'api/task/'+str(task_id), params={'apikey': config.apikey, 'secret': config.private_key}, json={'status': status_id})
 
 	def count_billable_cn(self):
-		r = get_count_dn()
+		r = self.get_count_dn()
 		billable_group = r['billable_group']
 		l = adgroup.ADGroup(distinguished_name=billable_group).get_members(recursive=True)
 		count=0
 		for item in l:
 			count +=1
-		update_count(count)
+		self.update_count(count)
 
 	@apiAuth
 	def get_count_dn(self):
@@ -144,7 +144,7 @@ class MADST_Client(object):
 					if value['type'] == 'create':
 						cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 						password = value['user']['sync_password']
-						password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
+						password = self.decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 						if self.check_user_exists(cn) is True:
 							try:
 								self.update_password(cn, password)
@@ -159,7 +159,7 @@ class MADST_Client(object):
 							try:
 								if not self.test:
 									try:
-										self.add_ad_user(get_ou(value['organization']['admin_ou']), cn, single_attributes=value['attributes']['single_attributes'], multi_attributes=value['attributes']['multi_attributes'])
+										self.add_ad_user(self.get_ou(value['organization']['admin_ou']), cn, single_attributes=value['attributes']['single_attributes'], multi_attributes=value['attributes']['multi_attributes'])
 									except pyadexceptions.InvalidAttribute:
 										self.change_task_status(value['id'], '5')
 										print("Task {} changed to status {}".format(value['id'], '5'))
