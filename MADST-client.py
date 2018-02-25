@@ -40,17 +40,17 @@ class MADST_Client(object):
 		self.test = pargs.test
 		self.dry_run = pargs.dry_run
 
-	def get_ou(ou):
+	def get_ou(self, ou):
 		try:
 			return adcontainer.ADContainer.from_dn(ou)
 		except pywintypes.com_error:
 			raise
 
-	def update_password(cn, password):
+	def update_password(self, cn, password):
 		user = aduser.ADUser.from_cn(cn)
 		user.set_password(password)
 
-	def add_ad_user(ou, cn, single_attributes=None, multi_attributes=None):
+	def add_ad_user(self, ou, cn, single_attributes=None, multi_attributes=None):
 		''' Creates a new user in the designated OU '''
 		ou.create_user(cn)
 		user = aduser.ADUser.from_cn(cn)
@@ -63,16 +63,16 @@ class MADST_Client(object):
 			else:
 				user.append_to_attribute(key, value)
 
-	def disable_user(cn):
+	def disable_user(self, cn):
 		user = aduser.ADUser.from_cn(cn)
 		user.disable()
 
-	def enable_user(cn):
+	def enable_user(self, cn):
 		user = aduser.ADUser.from_cn(cn)
 		user.enable()
 
 
-	def check_user_exists(cn):
+	def check_user_exists(self, cn):
 		""" Returns True if you are trying to create an existing CN """
 		try:
 			user = aduser.ADUser.from_cn(cn)
@@ -92,7 +92,7 @@ class MADST_Client(object):
 	def change_task_status(task_id, status_id):
 		requests.put(config.host + 'api/task/'+str(task_id), params={'apikey': config.apikey, 'secret': config.private_key}, json={'status': status_id})
 
-	def count_billable_cn():
+	def count_billable_cn(self):
 		r = get_count_dn()
 		billable_group = r['billable_group']
 		l = adgroup.ADGroup(distinguished_name=billable_group).get_members(recursive=True)
@@ -102,7 +102,7 @@ class MADST_Client(object):
 		update_count(count)
 
 	@apiAuth
-	def get_count_dn():
+	def get_count_dn(self):
 		r = requests.get(
 			config.host + 'api/org/users/count',
 			params={
@@ -114,7 +114,7 @@ class MADST_Client(object):
 		return r
 
 	@apiAuth
-	def update_count(count):
+	def update_count(self, count):
 		r = requests.put(
 			config.host + 'api/org/users/count',
 			params={
@@ -127,7 +127,7 @@ class MADST_Client(object):
 		return r
 
 	@apiAuth
-	def task_check():
+	def task_check(self):
 		params = {'apikey': config.apikey, 'secret': config.private_key, 'org_id': config.org_id}
 		return requests.get(config.host + 'api/tasks', params=params)
 
@@ -205,14 +205,14 @@ class MADST_Client(object):
 			# 	print("Updated {} users".format(self.updated_users))
 			time.sleep(5)
 
-#if __name__ == '__main__':
-#	run = MADST_Client(sys.argv)
-#	run.SvcDoRun()
-
 if __name__ == '__main__':
-	if len(sys.argv) == 1:
-		servicemanager.Initialize()
-		servicemanager.PrepareToHostSingle(MADST_Client)
-		servicemanager.StartServiceCtrlDispatcher()
-	else:
-		win32serviceutil.HandleCommandLine(MADST_Client)
+	run = MADST_Client(sys.argv)
+	run.SvcDoRun()
+
+#if __name__ == '__main__':
+#	if len(sys.argv) == 1:
+#		servicemanager.Initialize()
+#		servicemanager.PrepareToHostSingle(MADST_Client)
+#		servicemanager.StartServiceCtrlDispatcher()
+#	else:
+#		win32serviceutil.HandleCommandLine(MADST_Client)
