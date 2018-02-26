@@ -13,7 +13,7 @@ import time
 import argparse
 import ApiCalls
 from madst_error import *
-
+from impersonator import *
 try:
 	import config
 except ImportError:
@@ -101,6 +101,12 @@ def SvcDoRun():
 		servicemanager.LogErrorMsg("Error: " + str(e))
 
 def main():
+	imp = Impersonate(
+		username=config.username,
+		password=config.password,
+		domain=config.domain
+	)
+	imp.logonUser()
 	while True:
 		for key, value in ApiCalls.task_check().items():
 			if value['status']['id'] == 1:

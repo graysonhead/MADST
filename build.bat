@@ -1,1 +1,1 @@
-pyinstaller --onefile --specpath build --clean MADST-client.py
+pyinstaller --onefile --specpath build --clean pyService.py
