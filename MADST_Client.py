@@ -19,10 +19,6 @@ try:
 except ImportError:
 	raise madst_config_error("Failed to import config, please ensure the example is copied to config.py.")
 
-
-
-
-
 def get_ou(ou):
 	try:
 		return adcontainer.ADContainer.from_dn(ou)
@@ -72,6 +68,7 @@ def decrypt(string, pkey):
 	return passout.strip()
 
 def count_billable_cn():
+	pyad.set_defaults(username=config.username, password=config.password)
 	r = ApiCalls.get_count_dn()
 	billable_group = r['billable_group']
 	l = adgroup.ADGroup(distinguished_name=billable_group).get_members(recursive=True)
@@ -80,33 +77,7 @@ def count_billable_cn():
 		count +=1
 	ApiCalls.update_count(count)
 
-def SvcStop():
-	ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-	win32event.SetEvent(hWaitStop)
-
-def SvcDoRun():
-	try:
-		print("Starting...")
-		servicemanager.LogInfoMsg("Starting...")
-		servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
-							  servicemanager.PYS_SERVICE_STARTED,
-							  (_svc_name_, ''))
-		rc = None
-		while rc != win32event.WAIT_OBJECT_0:
-			with open('C:\\TestService.log', 'a') as f:
-				main()
-			rc = win32event.WaitForSingleObject(hWaitStop, 5000)
-	except Exception as e:
-		print("Error: " + str(e))
-		servicemanager.LogErrorMsg("Error: " + str(e))
-
 def main():
-	imp = Impersonate(
-		username=config.username,
-		password=config.password,
-		domain=config.domain
-	)
-	imp.logonUser()
 	while True:
 		for key, value in ApiCalls.task_check().items():
 			if value['status']['id'] == 1:

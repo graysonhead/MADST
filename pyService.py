@@ -1,4 +1,5 @@
 import servicemanager
+import traceback
 import socket
 import sys
 import win32event
@@ -24,7 +25,10 @@ class pyService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         rc = None
         while rc != win32event.WAIT_OBJECT_0:
-            script.main()
+            try:
+                script.main()
+            except:
+                servicemanager.LogErrorMessage(traceback.format_exec())
             rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
 
 
