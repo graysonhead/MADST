@@ -11,4 +11,5 @@ class LdapServerTypeError(MCL_Error):
     '''
     Unsupported Server Type
     '''
-    pass
+    def __init__(self, msg):
+        raise MCL_Error('Unsupported Server Type:' + str(msg))

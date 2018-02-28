@@ -1,10 +1,9 @@
-import hashlib,binascii
-import hmac
-from enum import Enum
+import hashlib
+from enum import IntEnum
 import ssl
-from ldap3 import Server, Connection, SIMPLE, KERBEROS, Tls, SASL, ALL, NTLM, SUBTREE
-from errors import *
-class Ldap_Server_Type(Enum):
+from ldap3 import Server, Connection, Tls, SASL, ALL, NTLM, SUBTREE
+from Ldap_Operations.errors import *
+class Ldap_Server_Type(IntEnum):
      Windows_AD=1
      FreeIPA=2
 
@@ -69,7 +68,7 @@ class Ldap_Operations(object):
           return '00000000000000000000000000000000:' + h
 
      def users_in_group(self, baseDN, groupDN):
-          ret=self.conn.search(
+          self.conn.search(
                search_base=baseDN,
                search_filter='(memberOf='+groupDN+')',
                search_scope=SUBTREE,
@@ -78,6 +77,12 @@ class Ldap_Operations(object):
           return self.conn.entries.__len__()
 
 if __name__ == '__main__':
-     t=Ldap_Operations(Ldap_Server_Type.Windows_AD, server='10.233.51.3', domain='rsitex', user='spencer', plaintext_pw='notreal')
+     t=Ldap_Operations(
+          Ldap_Server_Type.Windows_AD,
+          server='10.233.51.3',
+          domain='rsitex',
+          user='spencer',
+          plaintext_pw=''
+     )
      print(t.serverInfo())
      print(t.users_in_group('DC=RSITEX,DC=COM','CN=RSI Employees,OU=Groups,OU=RSI,DC=RSITEX,DC=COM'))

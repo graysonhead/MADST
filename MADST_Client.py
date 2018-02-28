@@ -1,11 +1,3 @@
-import sys
-import socket
-import win32event
-import win32service
-import win32serviceutil
-import servicemanager
-import win32timezone
-import requests
 from Cryptodome.Cipher import AES
 import base64
 from pyad import adbase, adcomputer, adcontainer, adsearch, adquery, addomain, pyad, aduser, adgroup, pyadexceptions
@@ -14,6 +6,7 @@ import argparse
 import ApiCalls
 from madst_error import *
 from impersonator import *
+from Ldap_Operations.Ldap_Operations import *
 try:
 	import config
 except ImportError:
@@ -68,13 +61,18 @@ def decrypt(string, pkey):
 	return passout.strip()
 
 def count_billable_cn():
-	pyad.set_defaults(username=config.username, password=config.password)
 	r = ApiCalls.get_count_dn()
 	billable_group = r['billable_group']
-	l = adgroup.ADGroup(distinguished_name=billable_group).get_members(recursive=True)
-	count=0
-	for item in l:
-		count +=1
+
+	check = Ldap_Operations(
+		config.ldap_server_type,
+		server=config.ldap_server,
+		domain=config.domain,
+		user=config.username,
+		plaintext_pw=config.password
+	)
+	count = check.users_in_group(config.baseDN, billable_group)
+
 	ApiCalls.update_count(count)
 
 def main():
