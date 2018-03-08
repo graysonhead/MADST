@@ -99,7 +99,10 @@ def admin_orgs(sesh):
 		flash('Added new organization {}.'.format(name))
 		return (redirect(url_for('admin_orgs')))
 	if request.method == 'GET':
-		orgs = sesh.query(models.Organization).all()
+		orgs = []
+		for o in sesh.query(models.Organization).all():
+			if not o.disabled:
+				orgs.append(o)
 		return render_template(
 			'admin_orgs.html',
 			title='Organization Admin',
@@ -196,20 +199,8 @@ def admin_org(sesh):
 	if request.method == 'GET':
 		billinggroupform.group.data = org.billing_group
 		if delete == 1:
-			for tmp in org.templates:
-				# Clean up single attributes in org
-				for sa in tmp.single_attributes:
-					sesh.delete(sa)
-				# Clean up multi attributes in org
-				for ma in tmp.multi_attributes:
-					sesh.delete(ma)
-				# Clean up templates in org
-				sesh.delete(tmp)
-			# Clean up tasks in org
-			for t in org.tasks:
-				sesh.delete(t)
-			# Delete org
-			sesh.delete(org)
+			org.disabled = True
+			sesh.add(org)
 			sesh.commit()
 			flash("Deleted organization {}.".format(org.name))
 			return(redirect(url_for('admin_orgs')))
@@ -222,7 +213,10 @@ def admin_org(sesh):
 			return(redirect(url_for('admin_org', org_id=org_id)))
 
 		org = sesh.query(models.Organization).filter_by(id=org_id).first()
-		templates = org.templates
+		templates = []
+		for t in org.templates:
+			if not t.disabled:
+				templates.append(t)
 		admin_users = org.admin_users
 		return render_template(
 			'admin_org.html',
@@ -334,14 +328,10 @@ def admin_org_template(sesh, **kwargs):
 			roleform.rolename.choices = choices
 		if delete == 1:
 			template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
-			orgid = template.organization
-			for sa in template.single_attributes:
-				sesh.delete(sa)
-			for ma in template.multi_attributes:
-				sesh.delete(ma)
-			sesh.delete(template)
+			template.disabled = True
+			sesh.add(template)
 			sesh.commit()
-			return(redirect(url_for('admin_org', admin_org=orgid)))
+			return(redirect(url_for('admin_org', admin_org=template.organization.id)))
 		template = sesh.query(models.UserTemplate).filter_by(id=template_id).first()
 		org = template.organization
 		templates = org.templates
@@ -515,13 +505,13 @@ def admin_user(sesh):
 def admin_roles(sesh):
 	""" Forms """
 	newrole = NewRole()
-	roles = sesh.query(models.Role).all()
 	# Begin POST block
 	if request.method == 'POST':
 		if request.form.getlist('delete_role'):
 			role_id = request.form['delete_role']
 			role = get_role(sesh, role_id)
-			sesh.delete(role)
+			role.disabled = True
+			sesh.add(role)
 			sesh.commit()
 			flash("Deleted role {}".format(role.name))
 		elif newrole.newrole.data:
@@ -533,7 +523,10 @@ def admin_roles(sesh):
 	# End POST block
 	# Begin GET block
 	if request.method == 'GET':
-		roles = sesh.query(models.Role).all()
+		roles = []
+		for r in sesh.query(models.Role).all():
+			if not r.disabled:
+				roles.append(r)
 		return render_template('admin_roles.html',
 							   roles=roles,
 							   newrole=newrole,
