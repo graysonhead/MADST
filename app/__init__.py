@@ -6,7 +6,7 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 from flask_restful import Api
 import sys
 
-version_number = 'Beta 0.3.1'
+version_number = 'Beta 0.3.2'
 try:
 	import config
 except ImportError:

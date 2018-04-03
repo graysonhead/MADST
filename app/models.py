@@ -59,6 +59,7 @@ class Role(db.Model):
 	__tablename__ = 'role'
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120), unique=True)
+	disabled = db.Column(db.Boolean())
 	users = relationship(
 		"User",
 		secondary=role_table,
@@ -229,6 +230,7 @@ class Organization(db.Model):
 	sync_key = db.Column(db.String(120))
 	apikey = db.Column(db.String(120))
 	billable_users = db.Column(db.Integer)
+	disabled = db.Column(db.Boolean)
 	admin_users = relationship(
 		"User",
 		secondary=admin_user_table,
@@ -289,6 +291,7 @@ class UserTemplate(db.Model):
 	organization = relationship("Organization", back_populates="templates")
 	name = db.Column(db.String(120))
 	user_ou = db.Column(db.String(120))
+	disabled = db.Column(db.Boolean)
 	single_attributes = relationship("SingleAttributes")
 	multi_attributes = relationship("MultiAttributes")
 	tasks = relationship("Task", back_populates="template")
