@@ -1,4 +1,4 @@
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, g
@@ -6,7 +6,7 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 from flask_restful import Api
 import sys
 
-version_number = 'Beta 0.3.2'
+version_number = 'Beta 0.3.3'
 try:
 	import config
 except ImportError:
