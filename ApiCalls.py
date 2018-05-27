@@ -44,7 +44,7 @@ def task_check():
         params=params
     )
 
-@ApiAuth
+#@ApiAuth
 def change_task_status(task_id, status_id):
     requests.put(
         config.host + 'api/task/' + str(task_id),

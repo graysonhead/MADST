@@ -5,7 +5,7 @@ import time
 import argparse
 import ApiCalls
 from madst_error import *
-from impersonator import *
+#from impersonator import *
 from Ldap_Operations.Ldap_Operations import *
 try:
 	import config
@@ -161,4 +161,5 @@ if __name__ == '__main__':
 			time.sleep(5)
 	except Exception as e:
 		print(e)
+		raise
 	sys.exit()

@@ -1,13 +1,13 @@
 #todo:  host and keys in local (not python) config, the rest
 #served from api
 
-host = 'http://66.194.167.189:5000/'
-org_id = 2
-apikey = 'b8e611ddaa7dd6122566f81d77c5a2d5c63a'
-private_key = '5ECXLSO8YH8LKIW3VUZBVMI7JNHMO6FR'
-ldap_server = ''
-username = 'spencer'
-password = ''
-domain = 'rsitex'
-baseDN = 'DC=RSITEX,DC=COM'
+host = 'http://192.168.128.147:5000/'
+org_id = 1
+apikey = 'd43c98159b2d256f3c80401303a3cfd8ac97'
+private_key = 'JYF9N0TCQP2ZHAB3W52JWJGCD38YREDQ'
+ldap_server = '127.0.0.1'
+username = 'administrator'
+password = '1qazxsW@'
+domain = 'testds'
+baseDN = 'DC=testds,DC=testco,DC=COM'
 ldap_server_type=1
