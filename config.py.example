@@ -9,3 +9,9 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 logfile = "log.txt"
 syncloginprefix='HST'
+
+''' LDAP User Authentication '''
+ldap_server = ''
+ldap_domain = ''
+ldap_bind_user = ''
+ldap_bind_pw = ''

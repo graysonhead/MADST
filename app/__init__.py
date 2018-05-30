@@ -6,6 +6,8 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 from flask_restful import Api
 import sys
 
+from mldapcommon import ldap_operations
+
 version_number = 'Beta 0.3.3'
 try:
 	import config

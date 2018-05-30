@@ -30,5 +30,6 @@ Dependencies:
  * requests
  * sqlalchemy-migrate
  * pycrypto
+ * ldap3
  
  Demo video here: https://www.youtube.com/watch?v=L7E6_daTmD8
