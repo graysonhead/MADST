@@ -60,6 +60,7 @@ class Role(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(120), unique=True)
 	disabled = db.Column(db.Boolean())
+	ldap_group_dn = db.Column(db.String(120))
 	users = relationship(
 		"User",
 		secondary=role_table,
@@ -91,6 +92,8 @@ class User(db.Model):
 	sync_password = db.Column(db.String(120))
 	sync_username = db.Column(db.String(120))
 	disabled = db.Column(db.String(120))
+	is_ldap_user = db.Column(db.String(120))
+	ldap_guid = db.Column(db.String(120))
 	__tablename__ = 'user'
 	tasks = relationship("Task", back_populates="user")
 
@@ -107,11 +110,13 @@ class User(db.Model):
 	)
 	type = db.Column(db.String(50))
 
-	def __init__(self, username, password, first_name, last_name, roles=None):
+	def __init__(self, username, first_name, last_name, roles=None, ldap_guid=None, password=None):
 		self.username = username.lower()
 		self.first_name = first_name
 		self.last_name = last_name
-		self.set_password(password)
+		self.ldap_guid = ldap_guid
+		if password:
+			self.set_password(password)
 		self.gen_sync_username()
 
 	#Needed flask properties
@@ -133,6 +138,11 @@ class User(db.Model):
 
 	def set_sync_password(self, password):
 		self.sync_password = password
+		for r in self.roles:
+			for t in r.usertemplates:
+				t.add_task(self)
+
+	def start_sync(self):
 		for r in self.roles:
 			for t in r.usertemplates:
 				t.add_task(self)

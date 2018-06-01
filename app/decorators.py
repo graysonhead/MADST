@@ -2,6 +2,9 @@ from functools import wraps
 from werkzeug.exceptions import Forbidden
 from app import db, models
 from flask import jsonify, request
+from mldapcommon.ldap_operations import LdapServerType, LdapOperations
+from mldapcommon.errors import *
+import config
 
 
 def import_user():
@@ -62,6 +65,25 @@ def api_key_required():
 			return jsonify({"Error": "Incorrect authentication or not authorized."}), 401
 		return inner
 	return wrapper
+
+
+def ldap_operation(func):
+	@wraps(func)
+	def inner(*args, **kwargs):
+		ldap = ldap = LdapOperations(
+				config.ldap_server_type,
+				server=config.ldap_server,
+				domain=config.ldap_domain,
+				user=config.ldap_bind_user,
+				plaintext_pw=config.ldap_bind_pw
+			)
+		try:
+			return func(ldap, *args, **kwargs)
+		except:
+			raise
+		finally:
+			ldap.conn.unbind()
+	return inner
 
 def with_db_session(func):
 	@wraps(func)

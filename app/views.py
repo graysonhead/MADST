@@ -1,7 +1,10 @@
 from flask import render_template, flash, redirect, url_for, request
+import config
 from werkzeug.exceptions import Forbidden
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
-from .decorators import required, with_db_session, no_disabled_users
+from .decorators import required, with_db_session, no_disabled_users, ldap_operation
+from mldapcommon.ldap_operations import LdapServerType, LdapOperations
+from mldapcommon.errors import *
 from .forms import \
 	LoginForm, \
 	PasswordChange, \
@@ -43,12 +46,10 @@ def delete_user(user_id):
 def get_role(session, id):
 	return session.query(models.Role).filter_by(id=id).first()
 
-def create_user(username, first_name, last_name, password, session):
-	user = models.User(username, password, first_name.lower(), last_name.lower())
+def create_user(session, username, first_name, last_name, password):
+	user = models.User(username, first_name.lower(), last_name.lower(), password=password)
 	session.add(user)
 	session.commit()
-
-
 
 def get_user(user_id):
 	sesh = db.session()
@@ -68,6 +69,20 @@ def get_users():
 		sesh.rollback()
 	finally:
 		sesh.close()
+
+
+@ldap_operation
+def search_ldap(
+		ldap_connection, basedn=None, username=None, attributes=['userPrincipalName', 'sAMAccountName']):
+	return ldap_connection.find_dn_from_username(basedn, username, attributes)
+
+@ldap_operation
+def login_from_dn(ldap_connection, db_session, dn):
+	ldap_connection.conn.search(config.ldap_base_dn, '(distinguishedName={})'.format(dn), attributes='objectGuid')
+	return db_session.query(models.User).filter_by(ldap_guid=ldap_connection.conn.entries.objectGUID.value).first()
+
+def check_credentials(server=config.ldap_server, domain=config.ldap_domain, user=None, plaintext_pw=None):
+	ldap = LdapOperations(config.ldap_server_type, server=server, domain=domain, user=user, plaintext_pw=plaintext_pw)
 
 
 def log_pageview(request):
@@ -380,19 +395,42 @@ def login():
 		password = form.password.data
 		remember_me = form.remember_me.data
 		userObj = db.session.query(models.User).filter_by(username=username).first()
-		if userObj:
-			passval = userObj.check_password(password)
-			if passval:
-				app.logger.info("User %s logged in" % userObj.username)
-				login_user(userObj, remember=remember_me)
-				g.current_user = userObj
-				flash('You have logged in successfully')
-				return redirect(url_for('index'))
-			else:
-				app.logger.info('User {0} attempted to login with incorrect password'.format(form.username.data))
-				flash("Incorrect password")
+		if userObj.ldap_guid is not None:
+			''' If LDAP auth is enabled, check the directory '''
+			try:
+				dn = search_ldap(basedn=config.ldap_base_dn, username=username)
+				if dn:
+					sesh = db.session()
+					check_credentials(user=dn, plaintext_pw=password)
+					user_object = login_from_dn(sesh, dn)
+					login_user(user_object)
+					g.current_user = user_object
+					flash("Directory Login sucessful.")
+					return redirect(url_for('index'))
+			except LdapBindError:
+					flash("Incorrect username or password.")
+					app.logger.info("User {} attempted domain login with incorrect information."
+					                .format(username))
+			except LdapConnectError:
+				flash("The Directory server failed to respond, please contact your administrator.")
+				app.logger.info("User {} loookup on directory server {} failed."
+				                .format(username, config.ldap_server)
+				                )
 		else:
-			app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
+			if userObj:
+				passval = userObj.check_password(password)
+				if passval:
+					app.logger.info("User %s logged in" % userObj.username)
+					login_user(userObj, remember=remember_me)
+					g.current_user = userObj
+					flash('You have logged in successfully')
+					return redirect(url_for('index'))
+				else:
+					app.logger.info('User {0} attempted to login with incorrect password'.format(form.username.data))
+					flash("Incorrect password")
+			else:
+				app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
+
 	return render_template('login.html',
 						   title='Sign In',
 						   version_number=version_number,
@@ -416,7 +454,7 @@ def admin_users(sesh):
 	# End GET block
 	elif request.method == 'POST':
 		try:
-			create_user(userform.username.data, userform.first_name.data, userform.last_name.data, userform.password.data, sesh)
+			create_user(sesh, userform.username.data, userform.first_name.data, userform.last_name.data, password=userform.password.data)
 			flash('Created user account for {} {}.'.format(userform.first_name.data, userform.last_name.data))
 		except:
 			flash('Failed to create user account for {} {}.'.format(userform.first_name.data, userform.last_name.data))

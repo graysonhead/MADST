@@ -31,6 +31,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+#Shared LDAP bind for searching
+
 # Permissions
 # perms = Permissions(app, db, current_user)
 
