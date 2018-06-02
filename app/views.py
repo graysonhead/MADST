@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request
 import config
 from werkzeug.exceptions import Forbidden
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
+from app.sync import sync_roles, sync_user
 from .decorators import required, with_db_session, no_disabled_users, ldap_operation
 from mldapcommon.ldap_operations import LdapServerType, LdapOperations
 from mldapcommon.errors import *
@@ -79,7 +80,7 @@ def search_ldap(
 @ldap_operation
 def login_from_dn(ldap_connection, db_session, dn):
 	ldap_connection.conn.search(config.ldap_base_dn, '(distinguishedName={})'.format(dn), attributes='objectGuid')
-	return db_session.query(models.User).filter_by(ldap_guid=ldap_connection.conn.entries.objectGUID.value).first()
+	return db_session.query(models.User).filter_by(ldap_guid=ldap_connection.conn.entries[0].objectGUID.value).first()
 
 def check_credentials(server=config.ldap_server, domain=config.ldap_domain, user=None, plaintext_pw=None):
 	ldap = LdapOperations(config.ldap_server_type, server=server, domain=domain, user=user, plaintext_pw=plaintext_pw)
@@ -388,36 +389,15 @@ def admin_org_template(sesh, **kwargs):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 	form = LoginForm()
-	if g.user is not None and g.user.is_authenticated:
-		return redirect(url_for('index'))
-	if form:
-		username = form.username.data
-		password = form.password.data
-		remember_me = form.remember_me.data
-		userObj = db.session.query(models.User).filter_by(username=username).first()
-		if userObj.ldap_guid is not None:
-			''' If LDAP auth is enabled, check the directory '''
+	if request.method == 'POST':
+		if g.user is not None and g.user.is_authenticated:
+			return redirect(url_for('index'))
+		if form:
+			username = form.username.data
+			password = form.password.data
+			remember_me = form.remember_me.data
 			try:
-				dn = search_ldap(basedn=config.ldap_base_dn, username=username)
-				if dn:
-					sesh = db.session()
-					check_credentials(user=dn, plaintext_pw=password)
-					user_object = login_from_dn(sesh, dn)
-					login_user(user_object)
-					g.current_user = user_object
-					flash("Directory Login sucessful.")
-					return redirect(url_for('index'))
-			except LdapBindError:
-					flash("Incorrect username or password.")
-					app.logger.info("User {} attempted domain login with incorrect information."
-					                .format(username))
-			except LdapConnectError:
-				flash("The Directory server failed to respond, please contact your administrator.")
-				app.logger.info("User {} loookup on directory server {} failed."
-				                .format(username, config.ldap_server)
-				                )
-		else:
-			if userObj:
+				userObj = db.session.query(models.User).filter_by(username=username).first()
 				passval = userObj.check_password(password)
 				if passval:
 					app.logger.info("User %s logged in" % userObj.username)
@@ -425,16 +405,55 @@ def login():
 					g.current_user = userObj
 					flash('You have logged in successfully')
 					return redirect(url_for('index'))
-				else:
-					app.logger.info('User {0} attempted to login with incorrect password'.format(form.username.data))
-					flash("Incorrect password")
-			else:
-				app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
+			except AttributeError:
+				''' If LDAP auth is enabled, check the directory '''
+				try:
+					dn = search_ldap(basedn=config.ldap_base_dn, username=username)
+					if dn:
+						sesh = db.session()
+						check_credentials(user=dn, plaintext_pw=password)
+						try:
+							#TODO: We shouldn't be calling Sync here, another function proably needs to be created to sync a single user, but this works for now
+							sync_roles()
+							user_object = login_from_dn(sesh, dn)
+							login_user(user_object)
+						except AttributeError:
+							flash("You entered correct LDAP credentials, "
+							      "but this user is not authorized to access any pages. "
+							      "Check your LDAP group membership and MADST configuration.")
+							return render_template('login.html',
+							                       title='Sign In',
+							                       version_number=version_number,
+							                       form=form)
+						g.current_user = user_object
+						flash("Directory Login successful.")
+						return redirect(url_for('index'))
+				except LdapBindError:
+						flash("Incorrect username or password.")
+						app.logger.info("User {} attempted domain login with incorrect information."
+						                .format(username))
+				except LdapConnectError:
+					flash("The Directory server failed to respond, please contact your administrator.")
+					app.logger.info("User {} loookup on directory server {} failed."
+					                .format(username, config.ldap_server)
+					                )
+			flash("Account information not found or password incorrect.")
+			return render_template('login.html',
+		                       title='Sign In',
+		                       version_number=version_number,
+		                       form=form)
+			# app.logger.info('User {0} attempted to login with incorrect password'.format(form.username.data))
+			# flash("Incorrect password")
 
-	return render_template('login.html',
-						   title='Sign In',
-						   version_number=version_number,
-						   form=form)
+
+		else:
+			app.logger.info('User attempted to login with unknown username {0}'.format(form.username.data))
+
+	elif request.method == 'GET':
+		return render_template('login.html',
+							   title='Sign In',
+							   version_number=version_number,
+							   form=form)
 
 
 @app.route("/admin/users", methods=['GET', 'POST'])
