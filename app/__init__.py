@@ -8,7 +8,7 @@ import sys
 
 from mldapcommon import ldap_operations
 
-version_number = 'Beta 0.3.3'
+version_number = 'Beta 0.4.0'
 try:
 	import config
 except ImportError:
