@@ -469,7 +469,8 @@ def admin_users(sesh):
 		return render_template('admin_users.html',
 						userform=userform,
 						version_number=version_number,
-						users=users)
+						users=users
+		                       )
 	# End GET block
 	elif request.method == 'POST':
 		try:

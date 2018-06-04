@@ -4,6 +4,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, g
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from flask_restful import Api
+import jinja2
 import sys
 #from .sync import sync_roles
 import time
@@ -24,6 +25,7 @@ except ImportError:
 # Main flask app
 app = Flask(__name__)
 app.config.from_object('config')
+#app.jinja_env.undefined = jinja2.StrictUndefined
 
 # DB Object
 db = SQLAlchemy(app)
