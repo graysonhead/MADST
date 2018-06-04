@@ -26,6 +26,7 @@ Dependencies:
  * flask
  * flask-login
  * flask-sqlalchemy
+ * flask-apscheduler
  * wtforms
  * requests
  * sqlalchemy-migrate

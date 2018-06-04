@@ -5,6 +5,12 @@ from flask import Flask, g
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from flask_restful import Api
 import sys
+#from .sync import sync_roles
+import time
+import atexit
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from mldapcommon import ldap_operations
 
@@ -24,7 +30,7 @@ db = SQLAlchemy(app)
 
 db.init_app(app)
 with app.test_request_context():
-    db.create_all()
+	db.create_all()
 
 # Login Manager
 login_manager = LoginManager()
@@ -45,4 +51,14 @@ handler = RotatingFileHandler(config.logfile, maxBytes=10000, backupCount=1)
 handler.setLevel(logging.INFO)
 app.logger.addHandler(handler)
 
+
 from app import views, views_api, models
+
+# Scheduled Tasks
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+atexit.register(lambda: scheduler.shutdown())
+
+
+

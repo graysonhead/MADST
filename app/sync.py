@@ -30,14 +30,33 @@ def sync_user(ldap, session=None, username='', ldap_guid=None, first_name='', la
 @ldap_operation
 def sync_roles(ldap, sesh):
 	roles = sesh.query(models.Role).all()
+	users = sesh.query(models.User).all()
 	for role in roles:
-		print(role)
 		if role.ldap_group_dn:
-			add_users = ldap.users_in_group(config.ldap_base_dn, role.ldap_group_dn, attributes=['givenName', 'sn', 'objectGUID', 'sAMAccountName'])
-			for user in add_users:
+			'''Add users to roles they aren't currently a member of'''
+			users_to_add = ldap.users_in_group(config.ldap_base_dn, role.ldap_group_dn, attributes=['givenName', 'sn', 'objectGUID', 'sAMAccountName'])
+			for user in users_to_add:
 				user_object = sync_user(session=sesh, username=user.sAMAccountName.value, first_name=user.givenName.value, last_name=user.sn.value, ldap_guid=user.objectGUID.value)
 				user_object.add_role(role)
 				sesh.add(user_object)
 				sesh.add(role)
 				sesh.commit()
 				app.logger.info("LDAP Sync: Added user {} to role {}".format(user_object.username, role.name))
+			'''Remove any users that have been removed from an LDAP group'''
+			'''Build list of objectGUIDs that belong in group according to LDAP'''
+			users_in_group = []
+			for user in users_to_add:
+				users_in_group.append(user.objectGUID.value)
+			for user in users:
+				if user.ldap_guid and user.ldap_guid not in users_in_group:
+					user.roles.remove(role)
+					sesh.add(user)
+					app.logger.info("LDAP Sync: Removing user {} from role {}".format(user.username, role.name))
+	sesh.commit()
+
+# scheduler.add_job(
+# 	func=sync_roles,
+# 	trigger=IntervalTrigger(seconds=config.ldap_sync_interval_seconds),
+# 	name='Sync Ldap every {} seconds'.format(config.ldap_sync_interval_seconds),
+# 	replace_existing=True
+# )
