@@ -56,6 +56,7 @@ class AddRole(Form):
 
 class NewRole(Form):
 	newrole = StringField('Role Name', validators=[DataRequired()])
+	ldap_dn = StringField('LDAP Group DN', validators=[DataRequired()])
 
 class BillingGroup(Form):
 	group = StringField('Billing Group', validators=[DataRequired()])

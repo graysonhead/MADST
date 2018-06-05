@@ -17,7 +17,8 @@
             {% endfor %}
             {{ newrole.hidden_tag() }}
             <form method="post" action="" value="Add Role">
-            {{ newrole.newrole.name }} {{ newrole.newrole }}
+                {{ newrole.newrole.name }} {{ newrole.newrole }}<br>
+                {{ newrole.ldap_dn.name }} {{ newrole.ldap_dn }}
             <input class="btn btn-primary" type="submit" value="Add Role">
             </form>
         </div>

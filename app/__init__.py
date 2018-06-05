@@ -15,7 +15,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from mldapcommon import ldap_operations
 
-version_number = 'Beta 0.4.1'
+version_number = 'Beta 0.4.2'
 try:
 	import config
 except ImportError:

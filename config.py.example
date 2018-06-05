@@ -11,7 +11,13 @@ logfile = "log.txt"
 syncloginprefix='HST'
 
 ''' LDAP User Authentication '''
-ldap_server = ''
-ldap_domain = ''
-ldap_bind_user = ''
+''' LDAP User Authentication '''
+ldap_enabled = True
+ldap_sync_interval_seconds = 30
+ldap_server = 'hostname or ip'
+ldap_domain = 'ds'
+ldap_base_dn = 'dc=ds,dc=domain,dc=com'
+ldap_bind_user = 'CN=user,OU=org,DC=ds,DC=domain,DC=com'
 ldap_bind_pw = ''
+ldap_server_type = LdapServerType.Generic_LDAP
+''' Valid options are: LdapServerType.Generic_LDAP'''

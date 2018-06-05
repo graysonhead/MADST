@@ -574,6 +574,8 @@ def admin_roles(sesh):
 			flash("Deleted role {}".format(role.name))
 		elif newrole.newrole.data:
 			role = models.Role(newrole.newrole.data)
+			if newrole.ldap_dn.data:
+				role.ldap_group_dn = newrole.ldap_dn.data
 			sesh.add(role)
 			sesh.commit()
 			flash("Added role {}".format(role.name))
