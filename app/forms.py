@@ -11,7 +11,7 @@ class LoginForm(Form):
 
 class PasswordChange(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
-
+	password_confirm = PasswordField('Confirm Password', validators=[DataRequired()])
 
 class AddName(Form):
 	name = StringField('Name', validators=[DataRequired()])
