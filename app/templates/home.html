@@ -17,14 +17,15 @@
             <p>Your Username on customer systems is: {{ user.sync_username }}</p>
               <form action="" method="post" name="login">
               {{ form.hidden_tag() }}
-                  Change Sync Password {{ form.password }}<input class="btn btn-primary" type="submit" value="Change">
-            </form>
+                  Change Sync Password:<br>
+                  Password: {{ form.password }}<br>
+                  Confirm: {{ form.password_confirm }}<br>
+                  <input class="btn btn-primary" type="submit" value="Change">
+              </form>
           </div>
           <div class="col-lg-4">
             <h2>Tasks</h2>
               {% for i in g.user.tasks %}
-              Task id: {{ i.id }}<br>
-              Task Type: {{ i.task_type }}
               <p>Directory: {{ i.template.organization.name.title() }}<br>Status:
                   <font color={% if i.status.name.title() == 'New' %}"blue"{% elif i.status.name.title() == 'In Progress' or i.status.name.title() == 'Completed'%}"green"{% elif i.status.name.title() == 'Failed' %}"red"{% endif %}>
                       {{ i.status.name.title() }}</p></font>
