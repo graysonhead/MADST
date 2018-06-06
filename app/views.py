@@ -222,8 +222,11 @@ def admin_org(sesh):
 			return(redirect(url_for('admin_orgs')))
 		elif resync == 1:
 			org = sesh.query(models.Organization).filter_by(id=org_id).first()
-			for u in org.admin_users:
-				org.add_task(u)
+			for t in org.templates:
+				for r in t.roles:
+					for u in r.users:
+						if u.sync_password is not None:
+							t.add_task(u)
 			flash("Created sync tasks for all admin users in organization {}".format(org.name))
 			sesh.commit()
 			return(redirect(url_for('admin_org', org_id=org_id)))
