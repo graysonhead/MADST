@@ -70,7 +70,7 @@ def api_key_required():
 def ldap_operation(func):
 	@wraps(func)
 	def inner(*args, **kwargs):
-		ldap = ldap = LdapOperations(
+		ldap = LdapOperations(
 				config.ldap_server_type,
 				server=config.ldap_server,
 				domain=config.ldap_domain,

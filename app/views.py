@@ -72,6 +72,15 @@ def get_users():
 		sesh.close()
 
 
+
+def delete_current_tasks(sesh, user):
+	for i in user.get_current_tasks():
+		sesh.delete(i)
+	sesh.commit()
+
+
+
+
 @ldap_operation
 def search_ldap(
 		ldap_connection, basedn=None, username=None, attributes=['userPrincipalName', 'sAMAccountName']):
@@ -135,13 +144,17 @@ def admin_orgs(sesh):
 def index(sesh):
 	form = PasswordChange()
 	if form.password.data:
-		password = form.password.data
-		user = sesh.query(models.User).filter_by(id=g.user.id).first()
-		user.set_sync_password(password)
-		sesh.add(user)
-		app.logger.info("{} changed their sync password".format(g.user.username))
-		sesh.commit()
-		flash("Sync password changed.")
+		if form.password.data == form.password_confirm.data:
+			password = form.password.data
+			user = sesh.query(models.User).filter_by(id=g.user.id).first()
+			delete_current_tasks(sesh, user)
+			user.set_sync_password(password)
+			sesh.add(user)
+			app.logger.info("{} changed their sync password".format(g.user.username))
+			sesh.commit()
+			flash("Sync password changed.")
+		else:
+			flash("Passwords did not match.")
 		return redirect(url_for('index'))
 	if not g.user.is_authenticated:
 		return(redirect(url_for('login')))

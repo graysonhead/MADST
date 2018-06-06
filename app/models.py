@@ -2,10 +2,14 @@ from app import db, config, crypt
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 import os
 from binascii import hexlify
 import datetime
 from hashlib import md5
+
+def _get_date():
+	return datetime.datetime.now()
 
 # task_table = db.Table('task_table',
 # 					  db.Column(
@@ -147,6 +151,12 @@ class User(db.Model):
 			for t in r.usertemplates:
 				t.add_task(self)
 
+	def get_current_tasks(self):
+		tasklist = []
+		for t in self.tasks:
+			tasklist.append(t)
+		return tasklist
+
 	def check_password(self, password):
 		return check_password_hash(self.password, password)
 
@@ -205,6 +215,7 @@ class Task(db.Model):
 	template_id = db.Column(db.Integer, db.ForeignKey('user_template.id'))
 	template = relationship("UserTemplate", uselist=False, back_populates="tasks")
 	user = relationship("User", uselist=False, back_populates="tasks")
+	created_at = db.Column(db.DateTime(timezone=True), default=func.now())
 	status = relationship(
 		"Status",
 		secondary=status_map,
