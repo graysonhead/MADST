@@ -239,6 +239,7 @@ def admin_org(sesh):
 				for r in t.roles:
 					for u in r.users:
 						if u.sync_password is not None:
+							delete_current_tasks(sesh, u)
 							t.add_task(u)
 			flash("Created sync tasks for all admin users in organization {}".format(org.name))
 			sesh.commit()
