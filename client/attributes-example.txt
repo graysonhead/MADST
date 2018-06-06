@@ -1,0 +1,8 @@
+ouDistinguishedName:OU=users,OU=austin,OU=higher-state,DC=ds,DC=higher-state,DC=com
+multi:proxyAddresses=smtp:%firstName%@higher-state.com
+group:memberOf=CN=hst-terminal_rdc_access,OU=groups,OU=higher-state,DC=ds,DC=higher-state,DC=com
+group:memberOf=CN=remote_vpn_access,OU=groups,OU=higher-state,DC=ds,DC=higher-state,DC=com
+multi:proxyAddresses=smtp:%firstName%@hst.com
+single:homeDirectory=\\server\%userName%
+single:userPrincipalName=%userName%@ds.higher-state.com
+
