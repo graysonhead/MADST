@@ -45,7 +45,21 @@ def sync_roles():
 			'''Add users to roles they aren't currently a member of'''
 			users_to_add = ldap.users_in_group(config.ldap_base_dn, role.ldap_group_dn, attributes=['givenName', 'sn', 'objectGUID', 'sAMAccountName'])
 			for user in users_to_add:
-				user_object = sync_user(ldap, session=sesh, username=user.sAMAccountName.value, first_name=user.givenName.value, last_name=user.sn.value, ldap_guid=user.objectGUID.value)
+				if user.givenName.value:
+					firstname = user.givenName.value
+				else:
+					firstname = ''
+				if user.sn.value:
+					lastname = user.sn.value
+				else:
+					lastname = ''
+				user_object = sync_user(
+					ldap, session=sesh,
+					username=user.sAMAccountName.value,
+					first_name=firstname,
+					last_name=lastname,
+					ldap_guid=user.objectGUID.value
+				)
 				if role not in user_object.roles:
 					user_object.add_role(role)
 					sesh.add(user_object)
