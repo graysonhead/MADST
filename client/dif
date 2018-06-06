@@ -1,0 +1,295 @@
+[33mcommit 02f67b37a9cecb31fb8818234df35d991dce1263[m[33m ([m[1;36mHEAD -> [m[1;32mservice_class_grayson[m[33m)[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Wed May 30 06:36:12 2018 -0700
+
+    no loop in main (calling functions should schedule routine)
+
+[33mcommit 694e58b44dfbefbdbdd4c68b7b96c542d2175106[m[33m ([m[1;31mspencer/service_class_grayson[m[33m, [m[1;31morigin/service_class_grayson[m[33m)[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Sat May 26 22:05:59 2018 -0700
+
+    Disabled ApiAuth wrapper in ApiCalls.py as its expecing JSON output that the server isn't sending right now.
+
+[33mcommit 517e9b67fd8fa6a51722bd8377a9dd0c3fc42dd4[m[33m ([m[1;31morigin/service_class[m[33m, [m[1;32mservice_class[m[33m)[m
+Author: Spencer Harmon <spencer@rsitex.com>
+Date:   Tue Feb 27 23:52:35 2018 -0600
+
+    first ldap function integration to windows service.
+
+[33mcommit 070ec992d16cdf42f49ba9aa08338ac8ff66cffd[m
+Author: Spencer Harmon <spencer@rsitex.com>
+Date:   Tue Feb 27 16:50:45 2018 -0600
+
+    working ldap auth and billable user count query
+
+[33mcommit c0f79916d769f8ed68a70c711d2c444d3838f9af[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Tue Feb 27 08:21:18 2018 -0600
+
+    traceback event logging; pyad user test
+
+[33mcommit acf976f7f562b5762c9ab5c0e16ea07f4e6fc41f[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sun Feb 25 18:44:26 2018 -0600
+
+    user/pw in config for now
+
+[33mcommit f4c4998a569ade477492635293a9a0f221f24a07[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sun Feb 25 18:38:16 2018 -0600
+
+    impoersonate user for pyad as windows service
+
+[33mcommit c1b6da1e6705f03408675d73eca7549c5e0dc94f[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sun Feb 25 15:13:10 2018 -0600
+
+    initial commit; split service file from script. script supports direct execution.
+
+[33mcommit 5110ce17ee1af65932f9e32625d3cee30afcab9b[m[33m ([m[1;31morigin/windows-service[m[33m)[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sat Feb 24 22:49:09 2018 -0600
+
+    refactor api calls
+
+[33mcommit 1655590033245ca6404b034dbf32886de32e208e[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sat Feb 24 20:33:34 2018 -0600
+
+    more class conversion fixes
+
+[33mcommit a697213c6cbc7a60d6bf565d577ce0dcee982f0c[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sat Feb 24 20:25:50 2018 -0600
+
+    still testing; fixed class functions
+
+[33mcommit 620120a513e378fbad2963c1563f1c1b39f181d8[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Sat Feb 24 18:51:25 2018 -0600
+
+    initial commit; runs as windows service
+
+[33mcommit dcf746abb4630d837fed5ba0211e923caf69e095[m[33m ([m[1;31morigin/count_billable_cn[m[33m)[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Fri Feb 23 18:15:50 2018 -0600
+
+    remove extaneous print functions; uncomment other operations
+
+[33mcommit e35d50be0e3b5b3b5864bbe45cf553f65e7c1818[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Fri Feb 23 18:05:15 2018 -0600
+
+    fix update_count function
+
+[33mcommit 53af730b6941afab9f8a3e9e7033a4a4939127d2[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Fri Feb 23 17:23:55 2018 -0600
+
+    create decorator for API auth handling; add count_billable_cn
+
+[33mcommit 578d71813e853fd26d53d4f351d4c5132758700e[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Fri Feb 23 17:23:42 2018 -0600
+
+    create decorator for API auth handling; add count_billable_cn
+
+[33mcommit f14d25978a6a069c1b3f17e6c6ba3fba762d5aa7[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmaster[m[33m)[m
+Merge: e183af3 11dc4fd
+Author: Grayson Head <grayson@rsitex.com>
+Date:   Fri Feb 23 12:55:28 2018 -0600
+
+    Merged pycryptodome into master
+
+[33mcommit 11dc4fd62ee076f391dc01f28def4d30ad06b254[m[33m ([m[1;31morigin/pycryptodome[m[33m)[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Tue Feb 20 23:19:21 2018 -0800
+
+    Added:
+    - Enable an existing user
+
+[33mcommit 9682b67806f87f49956de5bf75c5cf84b534593c[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Tue Feb 20 22:42:02 2018 -0800
+
+    Added:
+    - Disable an existing user
+
+[33mcommit 8c3c8b082c3f00a55b7dea3ccc3dff583c3031f9[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Mon Feb 5 22:38:44 2018 -0800
+
+    Added:
+    - Update Existing User's password
+
+[33mcommit 38f74163d38a9c3f224df8bdb3b973a0242c629d[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Mon Feb 5 22:12:39 2018 -0800
+
+    Added:
+    - Create user
+    - Create single attributes
+    - Create multi attributes
+    - Add to groups
+    - Add password
+
+[33mcommit e183af37fd8b20063c4c91b96e93901a5e5bd229[m
+Merge: 6744cf2 8c3c8b0
+Author: Grayson Head <grayson@rsitex.com>
+Date:   Mon Feb 5 22:39:26 2018 -0600
+
+    Merged pycryptodome into master
+
+[33mcommit d69427368417716a3a11f65817057cb6ba5035ab[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Mon Feb 5 18:04:25 2018 -0800
+
+    Added Test flag, laying groundwork for attribute handling.
+
+[33mcommit 55a3f4b3def20acf4187e711e3998fad754b4dc3[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Mon Feb 5 17:15:15 2018 -0800
+
+    Fixing base functionality
+
+[33mcommit 2ca9bb68a497f1ce3d05777b476d9fd6da82ab5e[m
+Author: Spencer Harmon <spencer@RSITEX.COM>
+Date:   Thu Jan 25 14:56:53 2018 -0600
+
+    MADST-3: RESOLVED
+    use pycryptodomex instead of pycrypto. Removes visual studio dependency
+    and works as expected. I'm not sure if it adds a dependency on mingw
+    that isn't provided by the exe. App still broken due to hardcoded IP, et
+    c.
+
+[33mcommit 6744cf23a8e5407c6e5b919c6a7368518cd8c33b[m
+Author: Grayson Head <grayson.head@higher-state.com>
+Date:   Wed Jan 24 14:40:36 2018 -0600
+
+    Adding Readme
+
+[33mcommit 207aeed5eb3a01671076b3def9f596a50e6f8532[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Fri Jan 19 16:24:43 2018 -0600
+
+    MADST-client improvements
+
+[33mcommit 179218e291d40d3f5a90421460bc1f809646f324[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Thu Jan 11 16:06:23 2018 -0600
+
+    MADST-client improvements
+
+[33mcommit b369d826b8453525f533532f11f1e3b6012f9ad5[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Thu Jan 11 15:40:42 2018 -0600
+
+    MADST-client improvements
+
+[33mcommit b51cb7993db776e0a658eef36ecab2a4d4bdb9e0[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Thu Jan 11 14:20:55 2018 -0600
+
+    Adding MADST-client
+
+[33mcommit 6d31f98a7557988b54746438e343fd731de51043[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Sep 21 14:57:18 2017 -0500
+
+    Adding human readable errors to group join exceptions.
+
+[33mcommit 97937d383252e77c75e8d854708ec040bf69c05a[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Sep 21 14:48:46 2017 -0500
+
+    Adding additional example attributes.
+
+[33mcommit cc67e78482a19492d88c0f6b19a28647306d040d[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Sep 21 14:37:41 2017 -0500
+
+    Adding example attributes file.
+
+[33mcommit 94a7fb81af71da48e2a0474d3fe2e2e4f41582b5[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Sep 20 11:53:04 2017 -0500
+
+    Added disable user mode. Removed duplicate error handling.
+
+[33mcommit c71559fe5bc1be09063886d8a530895cf6597346[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Sep 20 10:46:28 2017 -0500
+
+    Program can now pull OU distinguished name from the attribute file. If the OU DN exists in the attribute file, you no longer need to specify it as a commandline option. New EXE Build
+
+[33mcommit b703874275592cb5f15831d0ee0cfd137b139f6c[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Sep 20 10:45:49 2017 -0500
+
+    Program can now pull OU distinguished name from the attribute file. If the OU DN exists in the attribute file, you no longer need to specify it as a commandline option
+
+[33mcommit aa02627c96586460d7f46ac242b2f85eba32d681[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Tue Sep 19 16:35:09 2017 -0500
+
+    Adding version tracking to program. Making program deliver more useful feedback to users when incorrect argument combinations are used. Cleaning up framework import process
+
+[33mcommit 1f6a9e527918c82e319b24cbd1a6b73844139bfd[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Aug 17 09:31:55 2017 -0500
+
+    Fixing typo in variable name
+
+[33mcommit 2d69c8cd98bf52030cdcd009a09ffa0c941ebe43[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Aug 16 13:52:08 2017 -0500
+
+    New build 8/16
+
+[33mcommit eceecb125f45c3eab568cfdd1d75ae3382c1265a[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Aug 16 12:03:32 2017 -0500
+
+    Building new exe
+
+[33mcommit 09b2b67aaed7313c8b582cb00def16670bba1209[m
+Author: Grayson Head <grayson@graysonhead.net>
+Date:   Wed Aug 16 11:58:06 2017 -0500
+
+    Adding new username formats
+
+[33mcommit 52d32051cdc13a586c9cbd0c6381fdd0805a2c84[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Jul 27 15:06:12 2017 -0500
+
+    Adding .zip distribution
+
+[33mcommit dc3e318961b0ba5795246eed21642b1eb051b41c[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Thu Jul 27 14:24:19 2017 -0500
+
+    New build
+
+[33mcommit 2ba5bffa3a6e192d48d6a7ed154e4a66d0a41146[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Jul 5 11:19:17 2017 -0500
+
+    Removed duplicate line
+
+[33mcommit ccc632dd0afc3497775e0daaa1297b1a4c5b38ce[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Wed Jul 5 10:41:57 2017 -0500
+
+    Fixed typos in help section
+
+[33mcommit cd229c9ea8d6b580fac7a171b49074313e7a6f5c[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Mon Jun 26 14:44:58 2017 -0500
+
+    Adding build directory and removing unneeded comments
+
+[33mcommit cc88c2c3c705037a2d7164779d12615e14ec0caa[m
+Author: Grayson Head <graysonh@ds.higher-state.com>
+Date:   Mon Jun 26 14:21:56 2017 -0500
+
+    Initial Commit
