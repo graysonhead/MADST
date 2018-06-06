@@ -16,7 +16,7 @@ from flask_apscheduler import APScheduler
 
 from mldapcommon import ldap_operations
 
-version_number = 'Beta 0.4.2'
+version_number = 'Beta 0.4.3'
 try:
 	import config
 except ImportError:
