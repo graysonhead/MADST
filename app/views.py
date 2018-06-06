@@ -19,7 +19,8 @@ from .forms import \
 	OUName, \
 	AddRole, \
 	NewRole, \
-	BillingGroup
+	BillingGroup, \
+	DNName
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -578,8 +579,10 @@ def admin_user(sesh):
 @no_disabled_users
 @with_db_session
 def admin_roles(sesh):
+	selected_role = request.args.get('selected_role', default=0, type=int)
 	""" Forms """
 	newrole = NewRole()
+	dnform = DNName()
 	# Begin POST block
 	if request.method == 'POST':
 		if request.form.getlist('delete_role'):
@@ -589,6 +592,12 @@ def admin_roles(sesh):
 			sesh.add(role)
 			sesh.commit()
 			flash("Deleted role {}".format(role.name))
+		elif dnform.dnname.data:
+			role = sesh.query(models.Role).filter_by(id=selected_role).first()
+			role.ldap_group_dn = dnform.dnname.data
+			sesh.add(role)
+			sesh.commit()
+			flash("Role {} ldap DN changed to {}".format(role.name, role.ldap_group_dn))
 		elif newrole.newrole.data:
 			role = models.Role(newrole.newrole.data)
 			if newrole.ldap_dn.data:
@@ -604,9 +613,14 @@ def admin_roles(sesh):
 		for r in sesh.query(models.Role).all():
 			if not r.disabled:
 				roles.append(r)
+		if selected_role:
+			selected_role_data = sesh.query(models.Role).filter_by(id=selected_role).first()
+			dnform.dnname.data = selected_role_data.ldap_group_dn
 		return render_template('admin_roles.html',
-							   roles=roles,
+		                       selected_role=selected_role,
+		                       roles=roles,
 							   newrole=newrole,
+		                       dnform=dnform,
 							   version_number=version_number)
 	#End GET block
 

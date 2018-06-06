@@ -12,7 +12,20 @@
             <h3>Roles:</h3>
             {% for r in roles %}
             <form method="post" action="roles" class="inline">
-                {{ r.name }} <button type="submit" name="delete_role" value="{{ r.id }}" class="btn btn-xs btn-danger">Delete</button>
+                <a href={{ url_for('admin_roles', selected_role=r.id) }}>{{ r.name }}</a>
+
+                <button
+                        type="submit"
+                        name="delete_role"
+                        value="{{ r.id }}"
+                        class="btn btn-xs btn-danger"
+                >Delete</button>
+                </form>
+                <form action="" method="post" name="adddnname">
+                {% if selected_role == r.id %}
+                {{ dnform.dnname }}
+                <input class="btn btn-primary" type="submit" value="Change">
+                {% endif %}
             </form><br>
             {% endfor %}
             {{ newrole.hidden_tag() }}
