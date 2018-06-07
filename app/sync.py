@@ -1,15 +1,15 @@
-from app import db, models, app
+from app import db, app, models, scheduler
 import config
 from mldapcommon.ldap_operations import *
 from mldapcommon.errors import *
-from app.decorators import with_db_session, ldap_operation
+from apscheduler.triggers.interval import IntervalTrigger
 
 
 
-@ldap_operation
 def sync_user(ldap, session=None, username='', ldap_guid=None, first_name='', last_name=''):
 	user = session.query(models.User).filter_by(ldap_guid=ldap_guid).first()
 	if not user:
+		app.logger.info("Creating user {}".format(username))
 		userobj = models.User(username, first_name=first_name.lower(), last_name=last_name.lower(), ldap_guid=ldap_guid)
 		session.add(userobj)
 		user = session.query(models.User).filter_by(ldap_guid=ldap_guid).first()
@@ -26,9 +26,18 @@ def sync_user(ldap, session=None, username='', ldap_guid=None, first_name='', la
 		return user
 
 
-@with_db_session
-@ldap_operation
-def sync_roles(ldap, sesh):
+
+def sync_roles():
+	ldap = LdapOperations(
+		config.ldap_server_type,
+		server=config.ldap_server,
+		domain=config.ldap_domain,
+		user=config.ldap_bind_user,
+		plaintext_pw=config.ldap_bind_pw
+	)
+
+	sesh = db.session()
+	app.logger.info("Starting LDAP Sync")
 	roles = sesh.query(models.Role).all()
 	users = sesh.query(models.User).all()
 	for role in roles:
@@ -36,7 +45,21 @@ def sync_roles(ldap, sesh):
 			'''Add users to roles they aren't currently a member of'''
 			users_to_add = ldap.users_in_group(config.ldap_base_dn, role.ldap_group_dn, attributes=['givenName', 'sn', 'objectGUID', 'sAMAccountName'])
 			for user in users_to_add:
-				user_object = sync_user(session=sesh, username=user.sAMAccountName.value, first_name=user.givenName.value, last_name=user.sn.value, ldap_guid=user.objectGUID.value)
+				if user.givenName.value:
+					firstname = user.givenName.value
+				else:
+					firstname = ''
+				if user.sn.value:
+					lastname = user.sn.value
+				else:
+					lastname = ''
+				user_object = sync_user(
+					ldap, session=sesh,
+					username=user.sAMAccountName.value,
+					first_name=firstname,
+					last_name=lastname,
+					ldap_guid=user.objectGUID.value
+				)
 				if role not in user_object.roles:
 					user_object.add_role(role)
 					sesh.add(user_object)
@@ -55,10 +78,17 @@ def sync_roles(ldap, sesh):
 						sesh.add(user)
 						app.logger.info("LDAP Sync: Removing user {} from role {}".format(user.username, role.name))
 	sesh.commit()
+	app.logger.info("LDAP Sync complete")
 
-# scheduler.add_job(
-# 	func=sync_roles,
-# 	trigger=IntervalTrigger(seconds=config.ldap_sync_interval_seconds),
-# 	name='Sync Ldap every {} seconds'.format(config.ldap_sync_interval_seconds),
-# 	replace_existing=True
-# )
+if config.ldap_enabled:
+	scheduler.add_job(
+		'LDAPSyncJob',
+		func=sync_roles,
+		trigger=IntervalTrigger(seconds=config.ldap_sync_interval_seconds),
+		name='Sync Ldap every {} seconds'.format(config.ldap_sync_interval_seconds),
+		replace_existing=True
+	)
+
+
+if __name__ == '__main__':
+	sync_roles()

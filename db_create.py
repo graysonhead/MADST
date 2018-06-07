@@ -36,7 +36,7 @@ finally:
 """ Add admin user """
 sesh = db.session()
 try:
-	user = models.User('admin', 'admin', 'admin', 'user')
+	user = models.User('admin', 'admin', 'admin', password='admin' )
 	techrole = models.Role('technician')
 	adminrole = models.Role('admin')
 	user.roles.append(adminrole)

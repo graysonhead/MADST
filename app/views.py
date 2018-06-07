@@ -19,7 +19,8 @@ from .forms import \
 	OUName, \
 	AddRole, \
 	NewRole, \
-	BillingGroup
+	BillingGroup, \
+	DNName
 
 # from flask.ext.permissions.decorators import user_is, user_has
 
@@ -70,6 +71,15 @@ def get_users():
 		sesh.rollback()
 	finally:
 		sesh.close()
+
+
+
+def delete_current_tasks(sesh, user):
+	for i in user.get_current_tasks():
+		sesh.delete(i)
+	sesh.commit()
+
+
 
 
 @ldap_operation
@@ -135,13 +145,17 @@ def admin_orgs(sesh):
 def index(sesh):
 	form = PasswordChange()
 	if form.password.data:
-		password = form.password.data
-		user = sesh.query(models.User).filter_by(id=g.user.id).first()
-		user.set_sync_password(password)
-		sesh.add(user)
-		app.logger.info("{} changed their sync password".format(g.user.username))
-		sesh.commit()
-		flash("Sync password changed.")
+		if form.password.data == form.password_confirm.data:
+			password = form.password.data
+			user = sesh.query(models.User).filter_by(id=g.user.id).first()
+			delete_current_tasks(sesh, user)
+			user.set_sync_password(password)
+			sesh.add(user)
+			app.logger.info("{} changed their sync password".format(g.user.username))
+			sesh.commit()
+			flash("Sync password changed.")
+		else:
+			flash("Passwords did not match.")
 		return redirect(url_for('index'))
 	if not g.user.is_authenticated:
 		return(redirect(url_for('login')))
@@ -226,6 +240,7 @@ def admin_org(sesh):
 				for r in t.roles:
 					for u in r.users:
 						if u.sync_password is not None:
+							delete_current_tasks(sesh, u)
 							t.add_task(u)
 			flash("Created sync tasks for all admin users in organization {}".format(org.name))
 			sesh.commit()
@@ -564,8 +579,10 @@ def admin_user(sesh):
 @no_disabled_users
 @with_db_session
 def admin_roles(sesh):
+	selected_role = request.args.get('selected_role', default=0, type=int)
 	""" Forms """
 	newrole = NewRole()
+	dnform = DNName()
 	# Begin POST block
 	if request.method == 'POST':
 		if request.form.getlist('delete_role'):
@@ -575,6 +592,12 @@ def admin_roles(sesh):
 			sesh.add(role)
 			sesh.commit()
 			flash("Deleted role {}".format(role.name))
+		elif dnform.dnname.data:
+			role = sesh.query(models.Role).filter_by(id=selected_role).first()
+			role.ldap_group_dn = dnform.dnname.data
+			sesh.add(role)
+			sesh.commit()
+			flash("Role {} ldap DN changed to {}".format(role.name, role.ldap_group_dn))
 		elif newrole.newrole.data:
 			role = models.Role(newrole.newrole.data)
 			if newrole.ldap_dn.data:
@@ -590,9 +613,14 @@ def admin_roles(sesh):
 		for r in sesh.query(models.Role).all():
 			if not r.disabled:
 				roles.append(r)
+		if selected_role:
+			selected_role_data = sesh.query(models.Role).filter_by(id=selected_role).first()
+			dnform.dnname.data = selected_role_data.ldap_group_dn
 		return render_template('admin_roles.html',
-							   roles=roles,
+		                       selected_role=selected_role,
+		                       roles=roles,
 							   newrole=newrole,
+		                       dnform=dnform,
 							   version_number=version_number)
 	#End GET block
 

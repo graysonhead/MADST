@@ -10,12 +10,13 @@ import sys
 import time
 import atexit
 
-from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from flask_apscheduler import APScheduler
 
 from mldapcommon import ldap_operations
 
-version_number = 'Beta 0.4.2'
+version_number = 'Beta 0.4.3'
 try:
 	import config
 except ImportError:
@@ -49,18 +50,22 @@ login_manager.login_view = 'login'
 api = Api(app)
 
 # Logging
+formatter = logging.Formatter(
+        "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 handler = RotatingFileHandler(config.logfile, maxBytes=10000, backupCount=1)
+handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 app.logger.addHandler(handler)
 
 
-from app import views, views_api, models
+
 
 # Scheduled Tasks
-scheduler = BackgroundScheduler()
+scheduler = APScheduler()
+scheduler.init_app(app)
 scheduler.start()
 
 atexit.register(lambda: scheduler.shutdown())
 
-
+from app import views, views_api, models
 

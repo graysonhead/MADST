@@ -11,7 +11,7 @@ class LoginForm(Form):
 
 class PasswordChange(Form):
 	password = PasswordField('Password', validators=[DataRequired()])
-
+	password_confirm = PasswordField('Confirm Password', validators=[DataRequired()])
 
 class AddName(Form):
 	name = StringField('Name', validators=[DataRequired()])
@@ -48,6 +48,9 @@ class UserCreationForm(Form):
 
 class OUName(Form):
 	ouname = StringField('Username', validators=[DataRequired()])
+
+class DNName(Form):
+	dnname = StringField('Distinguished Name', validators=[DataRequired()])
 
 # ('Option1', 'Option1'),('Option2', 'Option2')
 
