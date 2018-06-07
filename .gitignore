@@ -3,3 +3,5 @@ client/venv/
 *.pyc
 .idea/
 client/.idea/
+client/build/
+client/dist
