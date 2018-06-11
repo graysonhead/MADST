@@ -77,6 +77,14 @@ def sync_roles():
 						user.roles.remove(role)
 						sesh.add(user)
 						app.logger.info("LDAP Sync: Removing user {} from role {}".format(user.username, role.name))
+	for user in users:
+		if user.roles and user.disabled and user.ldap_guid:
+			user.enable
+			app.logger.info("LDAP Sync: Enabling user {} that was previously disabled due to role membership change.".format(user.username))
+		elif user.roles is False and user.disabled is False and user.ldap_guid:
+			user.disable
+			app.logger.info("LDAP Sync: Disabling user {} as they were removed from all roles".format(user.username))
+
 	sesh.commit()
 	app.logger.info("LDAP Sync complete")
 
