@@ -12,19 +12,25 @@ try:
 except ImportError:
 	raise madst_config_error("Failed to import config, please ensure the example is copied to config.py.")
 
+
 def get_ou(ou):
 	try:
 		return adcontainer.ADContainer.from_dn(ou)
 	except pywintypes.com_error:
 		raise
 
+
 def update_password(cn, password):
 	user = aduser.ADUser.from_cn(cn)
 	user.set_password(password)
 
-def add_ad_user(ou, cn, single_attributes=None, multi_attributes=None):
-	''' Creates a new user in the designated OU '''
+
+def create_ad_user(ou, cn):
 	ou.create_user(cn)
+
+
+def update_user_attributes(cn, single_attributes=None, multi_attributes=None):
+	''' Creates a new user in the designated OU '''
 	user = aduser.ADUser.from_cn(cn)
 	user.update_attributes(single_attributes)
 	for key, value in multi_attributes.items():
@@ -35,9 +41,11 @@ def add_ad_user(ou, cn, single_attributes=None, multi_attributes=None):
 		else:
 			user.append_to_attribute(key, value)
 
+
 def disable_user(cn):
 	user = aduser.ADUser.from_cn(cn)
 	user.disable()
+
 
 def enable_user(cn):
 	user = aduser.ADUser.from_cn(cn)
@@ -55,10 +63,12 @@ def check_user_exists(cn):
 	if user:
 		return True
 
+
 def decrypt(string, pkey):
 	cipher = AES.new(pkey, AES.MODE_ECB)
 	passout = cipher.decrypt(base64.b64decode(string))
 	return passout.strip()
+
 
 def count_billable_cn():
 	r = ApiCalls.get_count_dn()
@@ -81,10 +91,16 @@ def main():
 		if value['status']['id'] == 1:
 			if value['type'] == 'create':
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
+				ou = get_ou(value['organization']['admin_ou'])
 				password = value['user']['sync_password']
 				password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 				if check_user_exists(cn) is True:
 					try:
+						update_user_attributes(
+							cn,
+							single_attributes=value['attributes']['single_attributes'],
+							multi_attributes=value['attributes']['multi_attributes']
+						)
 						update_password(cn, password)
 						print('Updated User {}'.format(cn))
 						ApiCalls.change_task_status(value['id'], '3')
@@ -97,11 +113,12 @@ def main():
 					try:
 #						if not test:
 						try:
-							add_ad_user(
-								get_ou(value['organization']['admin_ou']),
+							create_ad_user(ou, cn)
+							update_user_attributes(
 								cn,
 								single_attributes=value['attributes']['single_attributes'],
-								multi_attributes=value['attributes']['multi_attributes'])
+								multi_attributes=value['attributes']['multi_attributes']
+							)
 						except pyadexceptions.InvalidAttribute:
 							ApiCalls.change_task_status(value['id'], '5')
 							print("Task {} changed to status {}".format(value['id'], '5'))
@@ -142,6 +159,7 @@ def main():
 					print("Task {} changed to status {}".format(value['id'], '4'))
 	count_billable_cn()
 
+
 if __name__ == '__main__':
 	updated_users = 0
 
@@ -159,6 +177,5 @@ if __name__ == '__main__':
 			main()
 			time.sleep(5)
 	except Exception as e:
-		print(e)
 		raise
 	sys.exit()
