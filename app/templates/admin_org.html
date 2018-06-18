@@ -4,6 +4,7 @@
 <main role="main">
     <div class="jumbotron">
             <p><h1>Organization Admin: {{ org.name }}</h1></p>
+            <p><h2>Billable User Count: {{ org.billable_users }}</h2></p>
     </div>
     <div><h2>User Templates</h2>
         {% for i in templates %}
