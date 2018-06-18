@@ -6,7 +6,6 @@ import argparse
 import ApiCalls
 from madst_error import *
 #from impersonator import *
-from Ldap_Operations.Ldap_Operations import *
 try:
 	import config
 except ImportError:
@@ -72,18 +71,11 @@ def decrypt(string, pkey):
 
 def count_billable_cn():
 	r = ApiCalls.get_count_dn()
-	billable_group = r['billable_group']
-
-	check = Ldap_Operations(
-		config.ldap_server_type,
-		server=config.ldap_server,
-		domain=config.domain,
-		user=config.username,
-		plaintext_pw=config.password
-	)
-	count = check.users_in_group(config.baseDN, billable_group)
+	group = adgroup.ADGroup.from_dn(r['billable_group'])
+	count = group.get_members().__len__()
 
 	ApiCalls.update_count(count)
+	return count
 
 
 def main():

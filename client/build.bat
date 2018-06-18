@@ -1,1 +1,1 @@
-pyinstaller --hiddenimport=win32timezone --onefile --specpath build --clean pyService.py
+pyinstaller --hiddenimport=win32timezone --onefile --specpath build --clean MADST_Client_Service.py
