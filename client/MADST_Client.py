@@ -82,7 +82,7 @@ def main():
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 				ou = get_ou(value['organization']['admin_ou'])
 				password = value['user']['sync_password']
-				password = decrypt(password.encode('utf-8'), Config.private_key.encode('utf-8')).decode('utf-8')
+				password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 				if check_user_exists(cn) is True:
 					try:
 						update_user_attributes(

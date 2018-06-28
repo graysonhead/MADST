@@ -1,7 +1,7 @@
-import requests
 from decorators import *
-import madst_error
-from MADST_Client import config
+from config import Config
+
+config = Config()
 
 @ApiAuth
 def get_count_dn():

@@ -15,6 +15,7 @@ class Config(object):
 			with open(config_file, 'r') as config:
 				data.update(json.load(config))
 		except FileNotFoundError or JSONDecodeError:
+			#todo: marshall this data.
 			file_data = {
 				'host': input("Enter host URI, e.g. 'https://madst.your-domain.com': "),
 				'org_id': input("Enter host ID (from the organization page on MADST Server): "),
