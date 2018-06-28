@@ -5,4 +5,3 @@ client/venv/
 client/.idea/
 client/build/
 client/dist
-client/config.py

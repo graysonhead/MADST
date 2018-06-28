@@ -1,11 +1,7 @@
 import requests
 from decorators import *
 import madst_error
-
-try:
-    import config
-except ImportError:
-    raise madst_config_error("Failed to import config, please ensure the example is copied to config.py.")
+from MADST_Client import config
 
 @ApiAuth
 def get_count_dn():
