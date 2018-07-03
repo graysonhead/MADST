@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging.handlers import RotatingFileHandler
+from flask.logging import default_handler
 from flask import Flask, g
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from flask_restful import Api
@@ -26,6 +27,7 @@ except ImportError:
 # Main flask app
 app = Flask(__name__)
 app.config.from_object('config')
+
 #app.jinja_env.undefined = jinja2.StrictUndefined
 
 # DB Object
@@ -45,7 +47,6 @@ login_manager.login_view = 'login'
 # Permissions
 # perms = Permissions(app, db, current_user)
 
-
 # API
 api = Api(app)
 
@@ -54,12 +55,10 @@ formatter = logging.Formatter(
         "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 handler = RotatingFileHandler(config.logfile, maxBytes=10000, backupCount=1)
 handler.setFormatter(formatter)
-handler.setLevel(logging.INFO)
 app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
 
-
-
-
+#handler.setLevel(logging.INFO)
 # Scheduled Tasks
 scheduler = APScheduler()
 scheduler.init_app(app)
