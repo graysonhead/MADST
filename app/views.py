@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect, url_for, request
 import config
 from werkzeug.exceptions import Forbidden
 from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
-from app.sync import sync_roles, sync_user
+from app.sync import sync_roles
 from .decorators import required, with_db_session, no_disabled_users, ldap_operation
 from mldapcommon.ldap_operations import LdapServerType, LdapOperations
 from mldapcommon.errors import *

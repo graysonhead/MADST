@@ -1,4 +1,10 @@
+
 *.db
+config.py
+db_repository/
+log.txt
+log.txt.1
+venv/
 client/venv/
 *__pycache__*
 *.pyc
