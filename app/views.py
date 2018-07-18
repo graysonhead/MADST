@@ -431,8 +431,6 @@ def login():
 						sesh = db.session()
 						check_credentials(user=dn, plaintext_pw=password)
 						try:
-							#TODO: We shouldn't be calling Sync here, another function proably needs to be created to sync a single user, but this works for now
-							sync_roles()
 							user_object = login_from_dn(sesh, dn)
 							login_user(user_object)
 						except AttributeError:
