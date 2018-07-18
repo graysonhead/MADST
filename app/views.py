@@ -138,6 +138,7 @@ def admin_orgs(sesh):
 		)
 
 @app.route('/index', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 @required('technician')
 @no_disabled_users
@@ -626,10 +627,4 @@ def admin_roles(sesh):
 @login_required
 def logout():
 	logout_user()
-	return redirect(url_for('index'))
-
-
-@app.route("/")
-@login_required
-def root():
 	return redirect(url_for('index'))
