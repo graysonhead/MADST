@@ -628,3 +628,8 @@ def logout():
 	logout_user()
 	return redirect(url_for('index'))
 
+
+@app.route("/")
+@login_required
+def root():
+	return redirect(url_for('index'))
