@@ -8,11 +8,26 @@
     </div>
 
     <div>
-        {% for i in orgs %}
-        <div>
-            <a href={{ url_for('admin_org',org_id=i.id) }}>{{ i.name.title() }}</a>
-        </div>
-        {% endfor %}
+        <table style="width:100%">
+            <tr>
+                <th>Organization</th>
+                <th>ID</th>
+                <th>Billable Users</th>
+            </tr>
+            {% for i in orgs %}
+                <tr>
+                    <td>
+                        <a href={{ url_for('admin_org',org_id=i.id) }}>{{ i.name.title() }}</a>
+                    </td>
+                    <td>
+                        {{ i.id }}
+                    </td>
+                    <td>
+                        {{ i.billable_users }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
         {{ form.hidden_tag() }}
         <form action="" method="post" name="add">
             {{ form.name.label }} {{ form.name }}
