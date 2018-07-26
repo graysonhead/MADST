@@ -3,8 +3,10 @@
 {% block content %}
 <main role="main">
     <div class="jumbotron">
-            <p><h1>Organization Admin: {{ org.name }}</h1></p>
-            <p><h2>Billable User Count: {{ org.billable_users }}</h2></p>
+            <p><h1>Organization Admin</h1></p>
+            <p><h2>Organization: {{ org.name }}</h2></p>
+            <p><h2>ID: {{ org.id }}</h2></p>
+            <p><h2>Billable Users: {{ org.billable_users }}</h2></p>
     </div>
     <div><h2>User Templates</h2>
         {% for i in templates %}
@@ -28,6 +30,7 @@
     </div>
     <div>
         <h2>Client Info</h2>
+        Org ID: {{ org.id }}
         API Key: {{ org.apikey }} <br>
         Sync/API Password: {{ org.sync_key }}
     </div>
