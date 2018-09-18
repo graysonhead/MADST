@@ -40,9 +40,16 @@ def task_check():
         params=params
     )
 
-#@ApiAuth
+class TaskStatus:
+    NEW = '1'
+    IN_PROGRESS = '2'
+    COMPLETED = '3'
+    FAILED = '4'
+    FAILED_BAD_ATTRIBUTE = '5'
+
+@ApiAuth
 def change_task_status(task_id, status_id):
-    requests.put(
+    return requests.put(
         config.host + 'api/task/' + str(task_id),
         params={
             'apikey': config.apikey,

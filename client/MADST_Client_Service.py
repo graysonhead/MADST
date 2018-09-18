@@ -31,6 +31,7 @@ class pyService(win32serviceutil.ServiceFramework):
             try:
                 script.main()
             except:
+                #send traceback to event logs
                 servicemanager.LogErrorMsg(traceback.format_exc())
                 continue
             rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)

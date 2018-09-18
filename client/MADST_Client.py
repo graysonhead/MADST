@@ -7,14 +7,10 @@ import ApiCalls
 from madst_error import *
 #from impersonator import *
 from config import Config
+import pywintypes
+import sys
 
 config = Config()
-def get_ou(ou):
-	try:
-		return adcontainer.ADContainer.from_dn(ou)
-	except pywintypes.com_error:
-		raise
-
 
 def update_password(cn, password):
 	user = aduser.ADUser.from_cn(cn)
@@ -80,7 +76,10 @@ def main():
 		if value['status']['id'] == 1:
 			if value['type'] == 'create':
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
-				ou = get_ou(value['organization']['admin_ou'])
+				try:
+					ou = adcontainer.ADContainer.from_dn(value['organization']['admin_ou'])
+				except Exception as e:
+					raise TaskFailed(str(e), taskinfo=value, taskid=value['id'])
 				password = value['user']['sync_password']
 				password = decrypt(password.encode('utf-8'), config.private_key.encode('utf-8')).decode('utf-8')
 				if check_user_exists(cn) is True:
@@ -92,8 +91,8 @@ def main():
 						)
 						update_password(cn, password)
 						print('Updated User {}'.format(cn))
-						ApiCalls.change_task_status(value['id'], '3')
-						print("Task {} changed to status {}".format(value['id'], '3'))
+						ApiCalls.change_task_status(value['id'], ApiCalls.TaskStatus.COMPLETED)
+						print("Task {} changed to status {}".format(value['id'], ApiCalls.TaskStatus.COMPLETED))
 					except:
 						ApiCalls.change_task_status(value['id'], '4')
 						print("Task {} changed to status {}".format(value['id'], '4'))
@@ -109,43 +108,41 @@ def main():
 								multi_attributes=value['attributes']['multi_attributes']
 							)
 						except pyadexceptions.InvalidAttribute:
-							ApiCalls.change_task_status(value['id'], '5')
-							print("Task {} changed to status {}".format(value['id'], '5'))
+							ApiCalls.change_task_status(value['id'], ApiCalls.TaskStatus.FAILED_BAD_ATTRIBUTE)
+							print("Task {} changed to status {}".format(value['id'],
+																		ApiCalls.TaskStatus.FAILED_BAD_ATTRIBUTE))
 							raise
 						update_password(cn, password)
 						print('Added User {}'.format(cn))
-						ApiCalls.change_task_status(value['id'], '3')
-						print("Task {} changed to status {}".format(value['id'], '3'))
+						ApiCalls.change_task_status(value['id'], ApiCalls.TaskStatus.COMPLETED)
+						print("Task {} changed to status {}".format(value['id'], ApiCalls.TaskStatus.COMPLETED))
 #						elif test:
 #							print(
 #								"Would have added user {} to ou {} with {} single attributes, and {} multi attributes.".format(
 #									cn, value['organization']['admin_ou'], value['attributes']['single_attributes'],
 #									value['attributes']['multi_attributes']))
-#							print("Would have changed task id {} to status {}".format(value['id'], '3'))
+#							print("Would have changed task id {} to status {}".format(value['id'], ApiCalls.TaskStatus.COMPLETED))
 					except:
 						if not value['status']['id'] == 5:
-							ApiCalls.change_task_status(value['id'], '4')
-							print("Task {} changed to status {}".format(value['id'], '4'))
+							raise TaskFailed(str(e), taskinfo=value, taskid=value['id'])
 						print("Failed to add user {} in ou {}".format(cn, value['organization']['admin_ou']))
 						raise
 			if value['type'] == 'disable':
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 				try:
 					disable_user(cn)
-					ApiCalls.change_task_status(value['id'], '3')
-					print("Task {} changed to status {}".format(value['id'], '3'))
+					ApiCalls.change_task_status(value['id'], ApiCalls.TaskStatus.COMPLETED)
+					print("Task {} changed to status {}".format(value['id'], ApiCalls.TaskStatus.COMPLETED))
 				except:
-					ApiCalls.change_task_status(value['id'], '4')
-					print("Task {} changed to status {}".format(value['id'], '4'))
+					raise TaskFailed(str(e), taskinfo=value, taskid=value['id'])
 			if value['type'] == 'enable':
 				cn = value['user']['first_name'] + ' ' + value['user']['last_name']
 				try:
 					enable_user(cn)
-					ApiCalls.change_task_status(value['id'], '3')
-					print("Task {} changed to status {}".format(value['id'], '3'))
+					ApiCalls.change_task_status(value['id'], ApiCalls.TaskStatus.COMPLETED)
+					print("Task {} changed to status {}".format(value['id'], ApiCalls.TaskStatus.COMPLETED))
 				except:
-					ApiCalls.change_task_status(value['id'], '4')
-					print("Task {} changed to status {}".format(value['id'], '4'))
+					raise TaskFailed(str(e), taskinfo=value, taskid=value['id'])
 	count_billable_cn()
 
 
@@ -164,7 +161,7 @@ if __name__ == '__main__':
 	try:
 		while True:
 			main()
-			time.sleep(5)
+#			time.sleep(5)
 	except Exception as e:
 		raise
 	sys.exit()

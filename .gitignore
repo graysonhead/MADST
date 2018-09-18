@@ -5,7 +5,9 @@ db_repository/
 log.txt
 log.txt.1
 venv/
+env/
 client/venv/
+client/env/
 *__pycache__*
 *.pyc
 .idea/
