@@ -66,5 +66,5 @@ scheduler.start()
 
 atexit.register(lambda: scheduler.shutdown())
 
-from app import views, views_api, models
+from app import views, views_api, views_ajax, models
 
