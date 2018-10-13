@@ -24,15 +24,63 @@
               </form>
           </div>
           <div class="col-lg-4">
-            <h2>Tasks</h2>
-              {% for i in g.user.tasks %}
-              <p>Directory: {{ i.template.organization.name.title() }}<br>Status:
-                  <font color={% if i.status.name.title() == 'New' %}"blue"{% elif i.status.name.title() == 'In Progress' or i.status.name.title() == 'Completed'%}"green"{% elif i.status.name.title() == 'Failed' %}"red"{% endif %}>
-                      {{ i.status.name.title() }}</p></font>
-              {% endfor %}
+              <h2>Tasks</h2>
+              <div class="task__list"></div>
+{#
+{#              {% for i in g.user.tasks %}#}
+{#              <p>Directory: {{ i.template.organization.name.title() }}<br>Status:#}
+{#                  <font color={% if i.status.name.title() == 'New' %}"blue"{% elif i.status.name.title() == 'In Progress' or i.status.name.title() == 'Completed'%}"green"{% elif i.status.name.title() == 'Failed' %}"red"{% endif %}>#}
+{#                      {{ i.status.name.title() }}</p></font>#}
+{#              {% endfor %}#}
           </div>
         </div>
 
-      </main>
 
+
+      </main>
+<script>
+
+function get_tasks() {
+    var resp = $.ajax({
+        dataType: "json",
+        url: "api/ajax/tasks",
+        success: function(){
+            display_tasks();
+            setTimeout(function(){get_tasks();}, 5000);
+         }
+    });
+    function display_tasks() {
+        var parentNode = document.querySelector('.task__list');
+        if (parentNode.firstChild) {
+            while (parentNode.firstChild) {
+                parentNode.removeChild(parentNode.firstChild);
+            }
+        }
+
+        resp.responseJSON.forEach(function(cur){
+                var task_html = '<div class="clearfix" id=task-%id%>\n' +
+                '            <div class="task__name">Task: %name%</div>\n' +
+                '            <div class="task__status">Status: %status%</div><div class="cm"></div>\n' +
+                    '</div>\n' +
+                '        </div>';
+                var newHTML = task_html.replace('%id%', cur['id']);
+                newHTML = newHTML.replace('%name%', cur['organization']['name']);
+                if (cur['status']['id'] === 1) {
+                    newHTML = newHTML.replace('%status%', '<img src="static/img/loading.svg" width="30" height="30">')
+                    //newHTML = newHTML.replace('%status%', '<div class="circle-loader"><div class="checkmark draw"></div>')
+                } else {
+                    newHTML = newHTML.replace('%status%', cur['status']['name']);
+                }
+
+                document.querySelector('.task__list').insertAdjacentHTML('beforeend', newHTML);
+               console.log(cur);
+            });
+
+    }
+
+}
+get_tasks();
+
+
+</script>
 {% endblock %}
