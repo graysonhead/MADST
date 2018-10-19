@@ -14,6 +14,7 @@ import atexit
 # from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from flask_apscheduler import APScheduler
+from flask_migrate import Migrate
 
 from mldapcommon import ldap_operations
 
@@ -37,6 +38,7 @@ db.init_app(app)
 with app.test_request_context():
 	db.create_all()
 
+migrate = Migrate(app, db)
 # Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -66,5 +68,5 @@ scheduler.start()
 
 atexit.register(lambda: scheduler.shutdown())
 
-from app import views, views_api, models
+from app import views, views_api, models, listeners
 

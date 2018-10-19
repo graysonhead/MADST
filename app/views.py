@@ -1,8 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 import config
 from werkzeug.exceptions import Forbidden
-from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number
-from app.sync import sync_roles
+from app import app, db, models, g, login_manager, login_user, logout_user, login_required, current_user, version_number, sync
 from .decorators import required, with_db_session, no_disabled_users, ldap_operation
 from mldapcommon.ldap_operations import LdapServerType, LdapOperations
 from mldapcommon.errors import *
@@ -74,13 +73,6 @@ def get_users():
 
 
 
-def delete_current_tasks(sesh, user):
-	for i in user.get_current_tasks():
-		sesh.delete(i)
-	sesh.commit()
-
-
-
 
 @ldap_operation
 def search_ldap(
@@ -149,7 +141,7 @@ def index(sesh):
 		if form.password.data == form.password_confirm.data:
 			password = form.password.data
 			user = sesh.query(models.User).filter_by(id=g.user.id).first()
-			delete_current_tasks(sesh, user)
+			sync.delete_user_tasks(sesh, user)
 			user.set_sync_password(password)
 			sesh.add(user)
 			app.logger.info("{} changed their sync password".format(g.user.username))
@@ -236,15 +228,8 @@ def admin_org(sesh):
 			flash("Deleted organization {}.".format(org.name))
 			return(redirect(url_for('admin_orgs')))
 		elif resync == 1:
-			org = sesh.query(models.Organization).filter_by(id=org_id).first()
-			for t in org.templates:
-				for r in t.roles:
-					for u in r.users:
-						if u.sync_password is not None:
-							delete_current_tasks(sesh, u)
-							t.add_task(u)
+			sesh.query(models.Organization).get(org_id).start_sync()
 			flash("Created sync tasks for all admin users in organization {}".format(org.name))
-			sesh.commit()
 			return(redirect(url_for('admin_org', org_id=org_id)))
 
 		org = sesh.query(models.Organization).filter_by(id=org_id).first()

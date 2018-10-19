@@ -10,7 +10,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 def sync_user(ldap_user, session):
 	"""
 
-	:param session: sqlalchemy db session
+	:param session: sqlalchemy db session object
 	:param ldap_user: ldap3 User object
 	:return:
 	"""
@@ -60,6 +60,7 @@ def sync_user(ldap_user, session):
 
 	return user
 
+
 def sync_roles():
 	with app.app_context():
 		ldap = LdapOperations(
@@ -99,6 +100,30 @@ def sync_roles():
 		sesh.commit()
 		sesh.close()
 		app.logger.info("LDAP Sync complete")
+
+
+def resync_all_orgs(session):
+	"""
+	Adds tasks as necessary to synchronize clients' users.
+	:param session: sqlalchemy db session object
+	:param org_id: optional. If specified, only the specified org will resync
+	:return:
+	"""
+	orgs = session.query(models.Organization)
+	for org in orgs:
+		for t in org.templates:
+			for r in t.roles:
+				for u in r.users:
+					if u.sync_password is not None:
+						delete_user_tasks(session, u)
+						t.add_task(u)
+	session.commit()
+
+
+def delete_user_tasks(sesh, user):
+	for task in user.get_current_tasks():
+		sesh.delete(task)
+	sesh.commit()
 
 if config.ldap_enabled:
 	scheduler.add_job(

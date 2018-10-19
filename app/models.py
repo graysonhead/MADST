@@ -1,4 +1,6 @@
-from app import db, config, crypt
+from sqlalchemy import event
+
+from app import db, config, crypt, app
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -7,6 +9,7 @@ import os
 from binascii import hexlify
 import datetime
 from hashlib import md5
+
 
 def _get_date():
 	return datetime.datetime.now()
@@ -85,6 +88,9 @@ class Role(db.Model):
 	def __str__(self):
 		return self.name
 
+	def start_sync(self):
+		for t in self.usertemplates:
+			t.start_sync()
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -95,7 +101,7 @@ class User(db.Model):
 	password = db.Column(db.String(120))
 	sync_password = db.Column(db.String(120))
 	sync_username = db.Column(db.String(120))
-	disabled = db.Column(db.String(120))
+	disabled = db.Column(db.Boolean, default=False)
 	is_ldap_user = db.Column(db.String(120))
 	ldap_guid = db.Column(db.String(120))
 	__tablename__ = 'user'
@@ -178,6 +184,7 @@ class User(db.Model):
 				return True
 		if role in self.roles:
 			return True
+
 	def gen_sync_username(self):
 		self.sync_username = config.syncloginprefix + '-' + self.first_name + '.' + self.last_name
 
@@ -191,18 +198,16 @@ class User(db.Model):
 		for r in self.roles:
 			for t in r.usertemplates:
 				t.add_task(self, task_type='disable')
-		self.disabled = 'True'
+		self.disabled = True
 
 	def enable(self):
 		for r in self.roles:
 			for t in r.usertemplates:
 				t.add_task(self, task_type='enable')
-		self.disabled = None
+		self.disabled = False
 
 	def __repr__(self):
 		return '<User %r>' % self.username
-
-
 
 
 class Task(db.Model):
@@ -239,6 +244,7 @@ class Task(db.Model):
 			self.status = status_id
 		else:
 			self.status = db.session.query(Status).filter_by(id=status_id).first()
+
 
 class Organization(db.Model):
 	__tablename__ = 'organization'
@@ -282,6 +288,13 @@ class Organization(db.Model):
 
 	def add_template(self, name):
 		self.templates.append(UserTemplate(name))
+
+	def start_sync(self):
+		for t in self.templates:
+			for r in t.roles:
+				for u in r.users:
+					if u.sync_password is not None:
+						t.add_task(u)
 
 
 class Status(db.Model):
@@ -340,17 +353,34 @@ class UserTemplate(db.Model):
 	def add_role(self, role):
 		self.roles.append(role)
 
-	def add_task(self, user, task_type='create'):
-		self.tasks.append(Task(self, user, task_type))
+	def start_sync(self):
+		for r in self.roles:
+			for u in r.users:
+				if u.sync_password is not None and u.disabled is False:
+					self.add_task(u)
+				elif u.sync_password is not None and u.disabled is True:
+					self.add_task(u, task_type='delete')
 
-#
+
+	def add_task(self, user, task_type='create'):
+		# Check for duplicate tasks
+		for t in Task.query.join((Status, Task.status)).filter(Status.name == 'new'):
+			if (t.user_id == user.id and
+					t.template_id == self.id and
+					t.task_type == task_type):
+				app.logger.info("Skipped task creation since task id {} satisfies this request".format(t.id))
+				return
+		task = Task(self, user, task_type)
+		self.tasks.append(task)
+		app.logger.info("Created task {}.".format(task.id))
+
+
 class SingleAttributes(db.Model):
 	__tablename__="single_attributes"
 	id = db.Column(db.Integer, primary_key=True)
 	key = db.Column(db.String(120))
 	value = db.Column(db.String(120))
 	template = db.Column(db.Integer, db.ForeignKey('user_template.id'))
-
 
 	def __init__(self, key, value):
 		self.key = key
@@ -360,7 +390,8 @@ class SingleAttributes(db.Model):
 		return '<Single_Attribute: {}: {}>'.format(self.key, self.value)
 
 	def __str__(self):
-		return self.name
+		return self.__repr__()
+
 
 class MultiAttributes(db.Model):
 	__tablename__="multi_attributes"
@@ -368,7 +399,6 @@ class MultiAttributes(db.Model):
 	key = db.Column(db.String(120))
 	value = db.Column(db.String(120))
 	template = db.Column(db.Integer, db.ForeignKey('user_template.id'))
-
 
 	def __init__(self, key, value):
 		self.key = key

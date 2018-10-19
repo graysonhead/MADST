@@ -39,7 +39,7 @@ def required(role):
 			current_user = import_user()
 			if current_user.check_role(role):
 				return func(*args, **kwargs)
-			raise Forbidden("Your roles do not grant you access to this page, or your account is disabled.")
+			raise Forbidden("Your roles do not grant you access to this page or your account is disabled.")
 		return inner
 	return wrapper
 
@@ -47,8 +47,9 @@ def no_disabled_users(func):
 	@wraps(func)
 	def inner(*args, **kwargs):
 		current_user = import_user()
-		if current_user.disabled:
-			raise Forbidden("Your roles do not grant you access to this page, or your account is disabled.")
+		if current_user.disabled is True:
+			print(current_user.disabled)
+			raise Forbidden("Your roles do not grant you access to this page or your account is disabled.")
 		else:
 			return func(*args, **kwargs)
 	return inner

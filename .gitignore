@@ -14,3 +14,5 @@ client/env/
 client/.idea/
 client/build/
 client/dist
+migrations
+migrations/*
